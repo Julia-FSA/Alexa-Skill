@@ -4,16 +4,20 @@
   "description": "alexa utility for quickly building skills",
   "main": "index.js",
   "scripts": {
-    "update-lambda": "scripts/update-lamda"
+    "update-lambda": "scripts/update-lamda",
+    "update-john": "scripts/update-john",
+    "update-dan": "scripts/update-dan",
+    "update-steve": "scripts/update-steve",
+    "update-david": "scripts/update-david"
   },
   "author": "Amazon Alexa",
   "license": "ISC",
   "dependencies": {
-    "axios": "^0.19.2",
-    "spoonacular_api": "^1.0.0",
     "ask-sdk-core": "^2.6.0",
     "ask-sdk-model": "^1.18.0",
     "aws-sdk": "^2.326.0",
+    "axios": "^0.19.2",
+    "spoonacular_api": "^1.0.0",
     "uuid": "^8.0.0"
   }
 }

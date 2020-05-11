@@ -1,0 +1,8 @@
+
+#!/usr/bin/env bash
+
+zip -r index.zip *
+
+aws lambda update-function-code \
+--function-name steve-test \
+--zip-file fileb://index.zip
