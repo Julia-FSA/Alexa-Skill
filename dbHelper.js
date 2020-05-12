@@ -7,12 +7,14 @@ const tableName = "ingredients";
 var dbHelper = function () { };
 var docClient = new AWS.DynamoDB.DocumentClient();
 
-dbHelper.prototype.addIngredientToFridge = (ingredient, unit) => {
-    return new Promise(async (resolve, reject) => {
-        let result = await docClient.get({
+dbHelper.prototype.addIngredientToFridge = async (ingredient, unit) => {
+        try {
+            console.log('addIngredientToFridge()')
+            let result = await docClient.get({
             TableName: 'stocks',
             Key: {id: 0}
-          }).promise();
+          }).promise()
+          console.log('result', result)
         let prevIngredients = result.Item.ingredients;
         if(prevIngredients[ingredient]){
             prevIngredients[ingredient].quantity++;
@@ -32,15 +34,12 @@ dbHelper.prototype.addIngredientToFridge = (ingredient, unit) => {
               ':ingred': prevIngredients
             }
         };
-        docClient.update(params, (err, data) => {
-            if (err) {
-                console.log("Unable to update =>", JSON.stringify(err))
-                return reject("Unable to update");
-            }
-            console.log("Saved Data, ", JSON.stringify(data));
-            resolve(data);
-        });
-    });
+
+        await docClient.update(params).promise()
+        console.log('done updating')
+    } catch (err) {
+        console.log(err)
+    }
 }
 
 dbHelper.prototype.getRecipe = (userID) => {
