@@ -4,6 +4,7 @@
 const Alexa = require('ask-sdk-core');
 const dbHelper = require('./dbHelper')
 const generalPrompt = 'Is there anything else I can do?'
+const { developerName } = require('./secrets')
 let fridge = [];
 let ingredient = [];
 // const axios = require('axios')
@@ -24,7 +25,7 @@ const LaunchRequestHandler = {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'LaunchRequest';
     },
     handle(handlerInput) {
-        const speakOutput = 'Welcome to Julia Cooks. How can I help you today. I am using amazon lambda from David Digital Wednesday';
+        const speakOutput = `Welcome to Julia Cooks. I am running from ${developerName}'s Lambda function. How can I help you today?`;
         return handlerInput.responseBuilder
             .speak(speakOutput)
             .reprompt(speakOutput)
