@@ -17,13 +17,14 @@ let ingredient = [];
 
 
 //ADD A COMMENT
+//David's comment
 
 const LaunchRequestHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'LaunchRequest';
     },
     handle(handlerInput) {
-        const speakOutput = 'Welcome to Julia Cooks. How can I help you today. I am using amazon lambda from Digital Wednesday';
+        const speakOutput = 'Welcome to Julia Cooks. How can I help you today. I am using amazon lambda from David Digital Wednesday';
         return handlerInput.responseBuilder
             .speak(speakOutput)
             .reprompt(speakOutput)
@@ -75,9 +76,9 @@ const addToFridgeHandler = {
         if(slotValues && slotValues.food){
             speakOutput = `Added ${slotValues.food.heardAs} to the fridge`;
             fridge.push(slotValues.food.heardAs);
-            dbHelper.addIngredientToFridge(slotValues.food.heardAs, 'each')
+            dbHelper.addIngredientToFridge(slotValues.food.heardAs, 'each');
         } else {
-            speakOutput = 'Hello are you asking for food prices';
+            speakOutput = 'Sorry, i did not hear you.';
         }
         return handlerInput.responseBuilder
             .speak(speakOutput)

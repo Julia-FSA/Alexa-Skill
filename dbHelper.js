@@ -12,18 +12,24 @@ dbHelper.prototype.addIngredientToFridge = (ingredient, unit) => {
         let result = await docClient.get({
             TableName: 'stocks',
             Key: {id: 0}
-          }).promise()
+          }).promise();
         let prevIngredients = result.Item.ingredients;
+        if(prevIngredients[ingredient]){
+            prevIngredients[ingredient].quantity++;
+        }
+        else {
+            prevIngredients[ingredient] = 
+            {
+                "quantity": 1,
+                "unit": unit
+            }
+        }
         const params = {
             TableName: 'stocks',
             Key:{id:0},
             UpdateExpression: 'set ingredients = :ingred',
             ExpressionAttributeValues: {
-              ':ingred': [...prevIngredients, 
-                {"ingredientName": `${ingredient}`,
-                "ingredientQuantity": 1,
-                "unit":`${unit}`
-              }]
+              ':ingred': prevIngredients
             }
         };
         docClient.update(params, (err, data) => {
