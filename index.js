@@ -5,14 +5,17 @@ const Alexa = require('ask-sdk-core');
 const {
     addIngredientToFridge,
     getRecipeById,
+    getFridgeById,
+    findOrCreateUser,
     removeIngredientFromFridge,
     getRecipe
 } = require('./dbHelper')
 const generalPrompt = 'Is there anything else I can do?'
 const { developerName } = require('./secrets')
-let fridge = [];
+// let fridge = [];
 let ingredient = [];
 
+let state = {}
 
 const LaunchRequestHandler = {
     canHandle(handlerInput) {
@@ -22,6 +25,11 @@ const LaunchRequestHandler = {
         console.log('<----------------', handlerInput);
         console.log('user ---->', handlerInput.requestEnvelope.session.user.userId);
         console.log('sessionid ----> ', handlerInput.requestEnvelope.session.sessionId)
+
+        let userId = handlerInput.requestEnvelope.session.user.userId
+        state.userId = userId.slice(18)
+        findOrCreateUser(state.userId)
+
         const speakOutput = `Welcome to Julia Cooks. I am running from ${developerName}'s Lambda function. How can I help you today?`;
         return handlerInput.responseBuilder
             .speak(speakOutput)
@@ -31,13 +39,10 @@ const LaunchRequestHandler = {
 };
 
 
-
 const findRecipeByIngredientsHandler = {
   canHandle(handlerInput) {
-    return (
-      Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' &&
-      Alexa.getIntentName(handlerInput.requestEnvelope) === 'findRecipe'
-    )
+    return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+      && Alexa.getIntentName(handlerInput.requestEnvelope) === 'findRecipe'
   },
   handle(handlerInput) {
     const speakOutput = `We found a recipe.`
@@ -48,7 +53,7 @@ const findRecipeByIngredientsHandler = {
         'add a reprompt if you want to keep the session open for the user to respond'
       )
       .getResponse()
-  },
+  }
 }
 
 const getRecipeHandler = {
@@ -76,7 +81,6 @@ const getRecipeHandler = {
 
 const addToFridgeHandler = {
     canHandle(handlerInput) {
-
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'addToFridge';
     },
@@ -86,8 +90,7 @@ const addToFridgeHandler = {
         let slotValues = getSlotValues(request.intent.slots);
         if(slotValues && slotValues.food){
             speakOutput = `Added ${slotValues.food.heardAs} to the fridge`;
-            fridge.push(slotValues.food.heardAs);
-            addIngredientToFridge(slotValues.food.heardAs, 'each');
+            addIngredientToFridge(state.userId, slotValues.food.heardAs, 'each');
         } else {
             speakOutput = 'Sorry, i did not hear you.';
         }
@@ -126,8 +129,10 @@ const getFridgeHandler = {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'getFridge';
     },
-    handle(handlerInput) {
-        const speakOutput = `There is ${fridge.join(", ")} in your fridge`;
+    async handle(handlerInput) {
+        const fridge = await getFridgeById(state.userId)
+        console.log('fridge', Object.keys(fridge))
+        const speakOutput = `There is ${Object.keys(fridge).join(", ")} in your fridge`;
         return handlerInput.responseBuilder
             .speak(speakOutput)
             .reprompt('add a reprompt if you want to keep the session open for the user to respond')
