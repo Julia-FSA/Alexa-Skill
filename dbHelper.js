@@ -61,15 +61,13 @@ const addIngredientToFridge = async (ingredient, unit) => {
               ':ingred': prevIngredients
             }
         };
-//         const res = await docClient.update(params).promise();
-//         resolve(res.data);
-//         } catch (error) {
-//             return reject("Unable to update")
-//         }
-    });
+        await docClient.update(params).promise();
+        } catch (error) {
+            console.log(error);
+        }
 };
 
-const removeIngredientFromFridge = (ingredient) => {
+const removeIngredientFromFridge = async (ingredient) => {
     try {
       let result = await docClient.get({
             TableName: 'stocks',
@@ -91,9 +89,9 @@ const removeIngredientFromFridge = (ingredient) => {
        await docClient.update(params).promise();
       
     } catch (err) {
-      console.log(err)
+      console.log(err);
     }
-}
+};
 
 
 const getRecipe = async (alexaId) => {
