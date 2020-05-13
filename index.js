@@ -2,7 +2,7 @@
 // Please visit https://alexa.design/cookbook for additional examples on implementing slots, dialog management,
 // session persistence, api calls, and more.
 const Alexa = require('ask-sdk-core');
-const { 
+const {
     addIngredientToFridge,
     getRecipeById,
     removeIngredientFromFridge,
@@ -13,14 +13,6 @@ const { developerName } = require('./secrets')
 let fridge = [];
 let ingredient = [];
 
-// const axios = require('axios')
-// const id = 9226
-// const spoonacularAPIKey = 'ba51c1e2686d4c01abb5c4cdf16fb881'
-// axios.get(`https://api.spoonacular.com/food/ingredients/${id}/information?apiKey=${spoonacularAPIKey}`)
-//     .then((res) => {
-//         ingredient.push(res.data.name)
-//         console.log('ingredient is', res.data.name)
-//     })
 
 const LaunchRequestHandler = {
     canHandle(handlerInput) {
@@ -38,37 +30,8 @@ const LaunchRequestHandler = {
     }
 };
 
-// const HelloWorldIntentHandler = {
-//     canHandle(handlerInput) {
-//         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-//             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'HelloWorldIntent';
-//     },
-//     handle(handlerInput) {
-//         const speakOutput = 'Hello World!';
-//         return handlerInput.responseBuilder
-//             .speak(speakOutput)
-//             //.reprompt('add a reprompt if you want to keep the session open for the user to respond')
-//             .getResponse();
-//     }
-// };
 
-const getPriceOfFoodHandler = {
-  canHandle(handlerInput) {
-    return (
-      Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' &&
-      Alexa.getIntentName(handlerInput.requestEnvelope) === 'getPriceOfFood'
-    )
-  },
-  handle(handlerInput) {
-    const request = handlerInput.requestEnvelope.request
-    let speakOutput = ''
-    let slotValues = getSlotValues(request.intent.slots)
-    if (slotValues && slotValues.food) {
-      speakOutput = `The price of ${slotValues.food.heardAs} is 2 dollars`
-    } else {
-      speakOutput = 'Hello are you asking for food prices'
-    }
-    
+
 const findRecipeByIngredientsHandler = {
   canHandle(handlerInput) {
     return (
@@ -156,28 +119,7 @@ const removeFromFridgeHandler = {
             .getResponse();
     }
 };
-    
-// const callSpoonacularHandler = {
-//     canHandle(handlerInput) {
-//         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-//             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'callSpoonacular';
-//     },
-//     handle(handlerInput) {
-//         const request = handlerInput.requestEnvelope.request
-//         let speakOutput = '';
-//         let slotValues = getSlotValues(request.intent.slots);
-//         if(slotValues && slotValues.food){
-//             axios.get(`https://api.spoonacular.com/food/ingredients/${id}/information?apiKey=${spoonacularAPIKey}`)
-//                 .then((res) => {
-//                     speakOutput = `I am looking at spoonacular API for ${res.data.name}`;
-//                 });
-//         }
-//         return handlerInput.responseBuilder
-//             .speak(speakOutput)
-//             .reprompt('add a reprompt if you want to keep the session open for the user to respond')
-//             .getResponse();
-//     }
-// };
+
 
 const getFridgeHandler = {
     canHandle(handlerInput) {
@@ -336,7 +278,7 @@ exports.handler = Alexa.SkillBuilders.custom()
 
     .addRequestHandlers(
         LaunchRequestHandler,
-        getPriceOfFoodHandler,
+        getRecipeHandler,
         addToFridgeHandler,
         removeFromFridgeHandler,
         getFridgeHandler,
