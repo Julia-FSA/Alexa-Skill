@@ -8,6 +8,40 @@ AWS.config.update({region: "us-east-2"});
 // var dbHelper = function () { };
 const docClient = new AWS.DynamoDB.DocumentClient();
 
+const findOrCreateUser = async (userId) => {
+  try {
+    console.log('findOrCreateUser()')
+
+    const userParams = {
+      TableName: 'users',
+      Key: {id: userId}
+    }
+
+    const stocksParams = {
+      TableName: 'stocks',
+      Key: {id: userId}
+    }
+    
+    await docClient.update(userParams).promise()
+    await docClient.update(stocksParams).promise()
+  } catch (err) {
+    console.log(err)
+  }
+}
+
+const getFridgeById = async (userId) => {
+  try {
+      const params = {
+          TableName: 'stocks',
+          Key: {id: userId}
+      }
+      let data = await docClient.get(params).promise()
+      console.log('data.Item.ingredients', data.Item.ingredients)
+      return data.Item.ingredients
+  } catch (err) {
+      console.log(err)
+  }
+}
 
 const getRecipeById = async (recipeId) => {
     try {
@@ -36,11 +70,11 @@ const getRecipeByTitle = async (recipeTitle) => {
 }
 
 
-const addIngredientToFridge = async (ingredient, unit) => {
+const addIngredientToFridge = async (userId, ingredient, unit) => {
         try {
             let result = await docClient.get({
             TableName: 'stocks',
-            Key: {id: 0}
+            Key: {id: userId}
           }).promise()
         let prevIngredients = result.Item.ingredients;
         if(prevIngredients[ingredient]){
@@ -55,7 +89,7 @@ const addIngredientToFridge = async (ingredient, unit) => {
         }
         const params = {
             TableName: 'stocks',
-            Key:{id:0},
+            Key:{id: userId},
             UpdateExpression: 'set ingredients = :ingred',
             ExpressionAttributeValues: {
               ':ingred': prevIngredients
@@ -157,8 +191,10 @@ const getRecipe = async (alexaId) => {
 
 module.exports = {
     addIngredientToFridge,
+    getFridgeById,
     getRecipeById,
     getRecipeByTitle,
     getRecipe,
+    findOrCreateUser,
     removeIngredientFromFridge
 }
