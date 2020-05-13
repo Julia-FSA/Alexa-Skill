@@ -32,16 +32,40 @@ dbHelper.prototype.addIngredientToFridge = (ingredient, unit) => {
               ':ingred': prevIngredients
             }
         };
-        docClient.update(params, (err, data) => {
-            if (err) {
-                console.log("Unable to update =>", JSON.stringify(err))
-                return reject("Unable to update");
-            }
-            console.log("Saved Data, ", JSON.stringify(data));
-            resolve(data);
-        });
+        try {
+            const res = await docClient.update(params).promise();
+            resolve(res.data);
+        } catch (error) {
+            return reject("Unable to update")
+        }
     });
-}
+};
+dbHelper.prototype.removeIngredientFromFridge = (ingredient) => {
+    return new Promise(async (resolve, reject) => {
+        let result = await docClient.get({
+            TableName: 'stocks',
+            Key: {id: 0}
+          }).promise();
+        let prevIngredients = result.Item.ingredients;
+        if(prevIngredients[ingredient]){
+            delete prevIngredients[ingredient];
+        }
+        const params = {
+            TableName: 'stocks',
+            Key:{id:0},
+            UpdateExpression: 'set ingredients = :ingred',
+            ExpressionAttributeValues: {
+              ':ingred': prevIngredients
+            }
+        };
+        try {
+            const res = await docClient.update(params).promise();
+            resolve(res.data);
+        } catch (error) {
+            return reject("Unable to update")
+        }
+    });
+};
 
 dbHelper.prototype.getRecipe = (userID) => {
     return new Promise((resolve, reject) => {
