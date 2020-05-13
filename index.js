@@ -5,12 +5,14 @@ const Alexa = require('ask-sdk-core');
 const { 
     addIngredientToFridge,
     getRecipeById,
-    removeIngredientFromFridge
+    removeIngredientFromFridge,
+    getRecipe
 } = require('./dbHelper')
 const generalPrompt = 'Is there anything else I can do?'
 const { developerName } = require('./secrets')
 let fridge = [];
 let ingredient = [];
+
 // const axios = require('axios')
 // const id = 9226
 // const spoonacularAPIKey = 'ba51c1e2686d4c01abb5c4cdf16fb881'
@@ -19,10 +21,6 @@ let ingredient = [];
 //         ingredient.push(res.data.name)
 //         console.log('ingredient is', res.data.name)
 //     })
-
-// console.log(event.session.user.userId); // **Here**, output is literally amzn1.ask.account.[unique-value-here]
-//ADD A COMMENT
-//David's comment
 
 const LaunchRequestHandler = {
     canHandle(handlerInput) {
@@ -39,6 +37,7 @@ const LaunchRequestHandler = {
             .getResponse();
     }
 };
+
 // const HelloWorldIntentHandler = {
 //     canHandle(handlerInput) {
 //         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
@@ -52,26 +51,42 @@ const LaunchRequestHandler = {
 //             .getResponse();
 //     }
 // };
+
 const getPriceOfFoodHandler = {
-    canHandle(handlerInput) {
-        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'getPriceOfFood';
-    },
-    handle(handlerInput) {
-        const request = handlerInput.requestEnvelope.request
-        let speakOutput = '';
-        let slotValues = getSlotValues(request.intent.slots);
-        if(slotValues && slotValues.food){
-            speakOutput = `The price of ${slotValues.food.heardAs} is 2 dollars`;
-        } else {
-            speakOutput = 'Hello are you asking for food prices';
-        }
-        return handlerInput.responseBuilder
-            .speak(speakOutput)
-            .reprompt(generalPrompt)
-            .getResponse();
+  canHandle(handlerInput) {
+    return (
+      Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' &&
+      Alexa.getIntentName(handlerInput.requestEnvelope) === 'getPriceOfFood'
+    )
+  },
+  handle(handlerInput) {
+    const request = handlerInput.requestEnvelope.request
+    let speakOutput = ''
+    let slotValues = getSlotValues(request.intent.slots)
+    if (slotValues && slotValues.food) {
+      speakOutput = `The price of ${slotValues.food.heardAs} is 2 dollars`
+    } else {
+      speakOutput = 'Hello are you asking for food prices'
     }
-};
+    
+const findRecipeByIngredientsHandler = {
+  canHandle(handlerInput) {
+    return (
+      Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' &&
+      Alexa.getIntentName(handlerInput.requestEnvelope) === 'findRecipe'
+    )
+  },
+  handle(handlerInput) {
+    const speakOutput = `We found a recipe.`
+    getRecipe('saltthis123')
+    return handlerInput.responseBuilder
+      .speak(speakOutput)
+      .reprompt(
+        'add a reprompt if you want to keep the session open for the user to respond'
+      )
+      .getResponse()
+  },
+}
 
 const getRecipeHandler = {
     canHandle(handlerInput) {
@@ -141,6 +156,7 @@ const removeFromFridgeHandler = {
             .getResponse();
     }
 };
+    
 // const callSpoonacularHandler = {
 //     canHandle(handlerInput) {
 //         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
@@ -220,32 +236,39 @@ const CancelAndStopIntentHandler = {
 };
 
 const SessionEndedRequestHandler = {
-    canHandle(handlerInput) {
-        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'SessionEndedRequest';
-    },
-    handle(handlerInput) {
-        // Any cleanup logic goes here.
-        return handlerInput.responseBuilder.getResponse();
-    }
-};
+  canHandle(handlerInput) {
+    return (
+      Alexa.getRequestType(handlerInput.requestEnvelope) ===
+      'SessionEndedRequest'
+    )
+  },
+  handle(handlerInput) {
+    // Any cleanup logic goes here.
+    return handlerInput.responseBuilder.getResponse()
+  },
+}
 // The intent reflector is used for interaction model testing and debugging.
 // It will simply repeat the intent the user said. You can create custom handlers
 // for your intents by defining them above, then also adding them to the request
 // handler chain below.
 
 const IntentReflectorHandler = {
-    canHandle(handlerInput) {
-        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest';
-    },
-    handle(handlerInput) {
-        const intentName = Alexa.getIntentName(handlerInput.requestEnvelope);
-        const speakOutput = `You just triggered ${intentName}`;
-        return handlerInput.responseBuilder
-            .speak(speakOutput)
-            //.reprompt('add a reprompt if you want to keep the session open for the user to respond')
-            .getResponse();
-    }
-};
+  canHandle(handlerInput) {
+    return (
+      Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+    )
+  },
+  handle(handlerInput) {
+    const intentName = Alexa.getIntentName(handlerInput.requestEnvelope)
+    const speakOutput = `You just triggered ${intentName}`
+    return (
+      handlerInput.responseBuilder
+        .speak(speakOutput)
+        //.reprompt('add a reprompt if you want to keep the session open for the user to respond')
+        .getResponse()
+    )
+  },
+}
 // Generic error handling to capture any syntax or routing errors. If you receive an error
 // stating the request handler chain is not found, you have not implemented a handler for
 // the intent being invoked or included it in the skill builder below.
@@ -264,46 +287,53 @@ const ErrorHandler = {
 };
 
 function getSlotValues(filledSlots) {
-    const slotValues = {};
-    Object.keys(filledSlots).forEach((item) => {
-        const name  = filledSlots[item].name;
-        if (filledSlots[item] &&
-            filledSlots[item].resolutions &&
-            filledSlots[item].resolutions.resolutionsPerAuthority[0] &&
-            filledSlots[item].resolutions.resolutionsPerAuthority[0].status &&
-            filledSlots[item].resolutions.resolutionsPerAuthority[0].status.code) {
-            switch (filledSlots[item].resolutions.resolutionsPerAuthority[0].status.code) {
-                case 'ER_SUCCESS_MATCH':
-                    slotValues[name] = {
-                        heardAs: filledSlots[item].value,
-                        resolved: filledSlots[item].resolutions.resolutionsPerAuthority[0].values[0].value.name,
-                        ERstatus: 'ER_SUCCESS_MATCH'
-                    };
-                    break;
-                case 'ER_SUCCESS_NO_MATCH':
-                    slotValues[name] = {
-                        heardAs: filledSlots[item].value,
-                        resolved: '',
-                        ERstatus: 'ER_SUCCESS_NO_MATCH'
-                    };
-                    break;
-                default:
-                    break;
-            }
-        } else {
-            slotValues[name] = {
-                heardAs: filledSlots[item].value,
-                resolved: '',
-                ERstatus: ''
-            };
-        }
-    }, this);
-    return slotValues;
+  const slotValues = {}
+  Object.keys(filledSlots).forEach((item) => {
+    const name = filledSlots[item].name
+    if (
+      filledSlots[item] &&
+      filledSlots[item].resolutions &&
+      filledSlots[item].resolutions.resolutionsPerAuthority[0] &&
+      filledSlots[item].resolutions.resolutionsPerAuthority[0].status &&
+      filledSlots[item].resolutions.resolutionsPerAuthority[0].status.code
+    ) {
+      switch (
+        filledSlots[item].resolutions.resolutionsPerAuthority[0].status.code
+      ) {
+        case 'ER_SUCCESS_MATCH':
+          slotValues[name] = {
+            heardAs: filledSlots[item].value,
+            resolved:
+              filledSlots[item].resolutions.resolutionsPerAuthority[0].values[0]
+                .value.name,
+            ERstatus: 'ER_SUCCESS_MATCH',
+          }
+          break
+        case 'ER_SUCCESS_NO_MATCH':
+          slotValues[name] = {
+            heardAs: filledSlots[item].value,
+            resolved: '',
+            ERstatus: 'ER_SUCCESS_NO_MATCH',
+          }
+          break
+        default:
+          break
+      }
+    } else {
+      slotValues[name] = {
+        heardAs: filledSlots[item].value,
+        resolved: '',
+        ERstatus: '',
+      }
+    }
+  }, this)
+  return slotValues
 }
 // The SkillBuilder acts as the entry point for your skill, routing all request and response
 // payloads to the handlers above. Make sure any new handlers or interceptors you've
 // defined are included below. The order matters - they're processed top to bottom.
 exports.handler = Alexa.SkillBuilders.custom()
+
     .addRequestHandlers(
         LaunchRequestHandler,
         getPriceOfFoodHandler,
@@ -311,6 +341,7 @@ exports.handler = Alexa.SkillBuilders.custom()
         removeFromFridgeHandler,
         getFridgeHandler,
         getIngredientHandler,
+        findRecipeByIngredientsHandler,
         HelpIntentHandler,
         CancelAndStopIntentHandler,
         SessionEndedRequestHandler,
