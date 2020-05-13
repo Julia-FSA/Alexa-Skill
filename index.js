@@ -4,7 +4,8 @@
 const Alexa = require('ask-sdk-core');
 const { 
     addIngredientToFridge,
-    getRecipeById 
+    getRecipeById,
+    removeIngredientFromFridge
 } = require('./dbHelper')
 const generalPrompt = 'Is there anything else I can do?'
 const { developerName } = require('./secrets')
@@ -19,7 +20,7 @@ let ingredient = [];
 //         console.log('ingredient is', res.data.name)
 //     })
 
-
+// console.log(event.session.user.userId); // **Here**, output is literally amzn1.ask.account.[unique-value-here]
 //ADD A COMMENT
 //David's comment
 
@@ -28,6 +29,9 @@ const LaunchRequestHandler = {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'LaunchRequest';
     },
     handle(handlerInput) {
+        console.log('<----------------', handlerInput);
+        console.log('user ---->', handlerInput.requestEnvelope.session.user.userId);
+        console.log('sessionid ----> ', handlerInput.requestEnvelope.session.sessionId)
         const speakOutput = `Welcome to Julia Cooks. I am running from ${developerName}'s Lambda function. How can I help you today?`;
         return handlerInput.responseBuilder
             .speak(speakOutput)
@@ -94,11 +98,12 @@ const getRecipeHandler = {
 
 const addToFridgeHandler = {
     canHandle(handlerInput) {
+
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'addToFridge';
     },
     handle(handlerInput) {
-        const request = handlerInput.requestEnvelope.request
+        const request = handlerInput.requestEnvelope.request;
         let speakOutput = '';
         let slotValues = getSlotValues(request.intent.slots);
         if(slotValues && slotValues.food){
@@ -114,6 +119,49 @@ const addToFridgeHandler = {
             .getResponse();
     }
 };
+
+const removeFromFridgeHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'removeFromFridge';
+    },
+    handle(handlerInput) {
+        const request = handlerInput.requestEnvelope.request;
+        let speakOutput = '';
+        let slotValues = getSlotValues(request.intent.slots);
+        if(slotValues && slotValues.food){
+            speakOutput = `Removed ${slotValues.food.heardAs} from the fridge`;
+            removeIngredientFromFridge(slotValues.food.heardAs);
+        } else {
+            speakOutput = 'Sorry, i did not hear you.';
+        }
+        return handlerInput.responseBuilder
+            .speak(speakOutput)
+            .reprompt(generalPrompt)
+            .getResponse();
+    }
+};
+// const callSpoonacularHandler = {
+//     canHandle(handlerInput) {
+//         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+//             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'callSpoonacular';
+//     },
+//     handle(handlerInput) {
+//         const request = handlerInput.requestEnvelope.request
+//         let speakOutput = '';
+//         let slotValues = getSlotValues(request.intent.slots);
+//         if(slotValues && slotValues.food){
+//             axios.get(`https://api.spoonacular.com/food/ingredients/${id}/information?apiKey=${spoonacularAPIKey}`)
+//                 .then((res) => {
+//                     speakOutput = `I am looking at spoonacular API for ${res.data.name}`;
+//                 });
+//         }
+//         return handlerInput.responseBuilder
+//             .speak(speakOutput)
+//             .reprompt('add a reprompt if you want to keep the session open for the user to respond')
+//             .getResponse();
+//     }
+// };
 
 const getFridgeHandler = {
     canHandle(handlerInput) {
@@ -260,6 +308,7 @@ exports.handler = Alexa.SkillBuilders.custom()
         LaunchRequestHandler,
         getPriceOfFoodHandler,
         addToFridgeHandler,
+        removeFromFridgeHandler,
         getFridgeHandler,
         getIngredientHandler,
         HelpIntentHandler,

@@ -60,10 +60,37 @@ const addIngredientToFridge = async (ingredient, unit) => {
               ':ingred': prevIngredients
             }
         };
+//         const res = await docClient.update(params).promise();
+//         resolve(res.data);
+//         } catch (error) {
+//             return reject("Unable to update")
+//         }
+    });
+};
 
-        await docClient.update(params).promise()
+const removeIngredientFromFridge = (ingredient) => {
+    try {
+      let result = await docClient.get({
+            TableName: 'stocks',
+            Key: {id: 0}
+          }).promise();
+        let prevIngredients = result.Item.ingredients;
+        if(prevIngredients[ingredient]){
+            delete prevIngredients[ingredient];
+        }
+        const params = {
+            TableName: 'stocks',
+            Key:{id:0},
+            UpdateExpression: 'set ingredients = :ingred',
+            ExpressionAttributeValues: {
+              ':ingred': prevIngredients
+            }
+        };
+      
+       await docClient.update(params).promise();
+      
     } catch (err) {
-        console.log(err)
+      console.log(err)
     }
 }
 
@@ -116,5 +143,6 @@ const addIngredientToFridge = async (ingredient, unit) => {
 module.exports = {
     addIngredientToFridge,
     getRecipeById,
-    getRecipeByTitle
+    getRecipeByTitle,
+    removeIngredientFromFridge
 }
