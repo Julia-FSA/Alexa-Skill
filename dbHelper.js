@@ -1,5 +1,6 @@
 const AWS = require("aws-sdk");
 // const { v4: uuidv4 } = require("uuid");
+const getFromSpoon = require('./spoonacular')
 
 AWS.config.update({region: "us-east-2"});
 // const tableName = "ingredients";
@@ -94,29 +95,45 @@ const removeIngredientFromFridge = (ingredient) => {
     }
 }
 
-// dbHelper.prototype.getRecipe = (userID) => {
-//     return new Promise((resolve, reject) => {
-//         const params = {
-//             TableName: tableName,
-//             KeyConditionExpression: "#userID = :user_id",
-//             ExpressionAttributeNames: {
-//                 "#userID": "userId"
-//             },
-//             ExpressionAttributeValues: {
-//                 ":user_id": userID
-//             }
-//         }
-//         docClient.query(params, (err, data) => {
-//             if (err) {
-//                 console.error("Unable to read item. Error JSON:", JSON.stringify(err, null, 2));
-//                 return reject(JSON.stringify(err, null, 2))
-//             } 
-//             console.log("GetItem succeeded:", JSON.stringify(data, null, 2));
-//             resolve(data.Items)
-            
-//         })
-//     });
-// }
+
+const getRecipe = async (alexaId) => {
+    // step 1. get userId tied to alexaId
+    try {
+      let data = await docClient
+        .scan({
+          TableName: 'users',
+          FilterExpression: '#alexa_id = :alexa_id',
+          ExpressionAttributeNames: {
+            '#alexa_id': 'alexa_id',
+          },
+          ExpressionAttributeValues: {
+            ':alexa_id': alexaId,
+          },
+        })
+        .promise()
+      let {stock_id} = data.Items[0]
+      console.log('getUser succeeded! StockId is:', stock_id)
+
+      // step 2. get ingredients in stock
+      let params = {
+        TableName: 'stocks',
+        Key: {
+          id: stock_id,
+        },
+      }
+      data = await docClient.get(params).promise()
+      let ingredientsArray = Object.keys(data.Item.ingredients)
+      console.log('getStock succeeded! You have:', ingredientsArray)
+
+      // step 3. ping Spoonacular API
+      getFromSpoon('findByIngredients', 0, ingredientsArray, null)
+    } catch (err) {
+      console.error(
+        'Unable to read stock. Error JSON:',
+        JSON.stringify(err, null, 2)
+      )
+    }
+}
 
 // dbHelper.prototype.removeRecipe = (movie, userID) => {
 //     return new Promise((resolve, reject) => {
@@ -144,5 +161,6 @@ module.exports = {
     addIngredientToFridge,
     getRecipeById,
     getRecipeByTitle,
+    getRecipe,
     removeIngredientFromFridge
 }
