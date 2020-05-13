@@ -17,9 +17,14 @@ const findOrCreateUser = async (userId) => {
       Key: {id: userId}
     }
 
+
     const stocksParams = {
       TableName: 'stocks',
-      Key: {id: userId}
+      Key: {id: userId},
+      UpdateExpression: 'set ingredients = if_not_exists(ingredients, :ingred)',
+      ExpressionAttributeValues: {
+        ':ingred': {}
+      }
     }
     
     await docClient.update(userParams).promise()
