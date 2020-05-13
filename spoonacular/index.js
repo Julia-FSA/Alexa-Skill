@@ -4,6 +4,28 @@ const {SpoonacularAPIKey} = require('../secrets.js')
 //let recipe = {};
 // let ingredientArr = [];
 
+const recipeFormatter = (recipe) => {
+  let rec = {
+    id: recipe.id,
+    ingredients: [],
+    readyInMinutes: recipe.readyInMinutes,
+    servings: recipe.servings,
+    steps: [],
+    title: recipe.title,
+    vegan: recipe.vegan,
+    vegetarian: recipe.vegetarian,
+  }
+  recipe.analyzedInstructions[0].steps.forEach((step) => {
+    rec.steps.push(`Step ${step.number}: ${step.step}`)
+    step.ingredients.forEach((ingredient) => {
+      if (!rec.ingredients.includes(ingredient.id)) {
+        rec.ingredients.push(ingredient.id, `${ingredient.name}`)
+      }
+    })
+  })
+  return rec
+}
+
 const getFromSpoon = async (caseType, id, ingredients, name) => {
   if (caseType === 'ingredientByName') {
     axios
@@ -39,14 +61,14 @@ const getFromSpoon = async (caseType, id, ingredients, name) => {
     res = await axios.get(
       `https://api.spoonacular.com/recipes/${id}/information?includeNutrition=false&amount=1&apiKey=${SpoonacularAPIKey}`
     )
-    console.log(
-      'recipe is ',
-      res.data.instructions
-        .split('                                                          ')
-        .join('\n ++')
-        .split('                               ')
-        .join('. ')
-    )
+    // const dirtyRecipe = `recipe is for "${res.data.title}." The first step is:
+    //   ${res.data.instructions
+    //     .split('                                                          ')
+    //     .join('\n ++')
+    //     .split('                               ')
+    //     .join('. ')}`
+    // console.log(recipeFormatter(res.data))
+    return recipeFormatter(res.data)
   }
 
   if (caseType === 'recipeById') {
@@ -62,9 +84,14 @@ const getFromSpoon = async (caseType, id, ingredients, name) => {
 
 module.exports = getFromSpoon
 
-//getFromSpoon('ingredientByName', 0, [], 'apple')
+// getFromSpoon('ingredientByName', 0, [], 'apple')
 //getFromSpoon('ingredientById', 9266, [], null)
-//getFromSpoon('findByIngredients', 0, [ 'chicken', 'tortilla'], null)
+getFromSpoon(
+  'findByIngredients',
+  0,
+  ['chicken', 'tortilla', 'salsa', 'cheese'],
+  null
+)
 // getFromSpoon('recipeById', 531683, [], null)
 
 // {  "id": 0,
