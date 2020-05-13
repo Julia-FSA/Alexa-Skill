@@ -22,7 +22,7 @@ let ingredient = [];
 
 // console.log(event.session.user.userId); // **Here**, output is literally amzn1.ask.account.[unique-value-here]
 //ADD A COMMENT
-//David's comment
+//Dan's comment
 
 const LaunchRequestHandler = {
     canHandle(handlerInput) {
