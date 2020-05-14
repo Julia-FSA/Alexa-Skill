@@ -52,20 +52,29 @@ const findRecipeByIngredientsHandler = {
     const session = handlerInput.requestEnvelope.session;
     let userId = session.user.userId.slice(18);
     let spoonacular = await getRecipe(userId)
-    const recipe = spoonacular.steps;
-    const recipeName = spoonacular.title;
-
-    const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
-    const selectedRecipe = {
-        'name': recipeName,
-        'steps': recipe,
-        'stepIndex': 0
+    let speakOutput = '';
+    if(!spoonacular){
+      speakOutput = `We can't find a recipe based on what you have. Please buy more stuff.`
+    } else {
+      const recipe = spoonacular.steps;
+      const recipeName = spoonacular.title;
+      console.log(spoonacular.ingredients);
+      const ingredients = spoonacular.ingredients.filter((item,index) => (index%2=== 1)).join(', ');
+      console.log(ingredients);
+      const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+      const selectedRecipe = {
+          'name': recipeName,
+          'steps': recipe,
+          'stepIndex': 0
+      }
+      sessionAttributes.selectedRecipe = selectedRecipe;
+      handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
+      speakOutput = `we found a recipe for ${recipeName}. You will need the following ingredients, ${ingredients}`;
     }
-    sessionAttributes.selectedRecipe = selectedRecipe;
-    handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
+
 
     return handlerInput.responseBuilder
-      .speak(`we found a recipe for ${recipeName}.`)
+      .speak(speakOutput)
       .reprompt(
         'add a reprompt if you want to keep the session open for the user to respond'
       )
