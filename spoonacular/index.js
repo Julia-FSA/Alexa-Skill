@@ -1,10 +1,11 @@
+/* eslint-disable complexity */
 // const Alexa = require('ask-sdk-core');
 const axios = require('axios')
 const {SpoonacularAPIKey} = require('../secrets.js')
 //let recipe = {};
 // let ingredientArr = [];
-
 const recipeFormatter = (recipe) => {
+  console.log('formatter', recipe);
   let rec = {
     id: recipe.id,
     ingredients: [],
@@ -54,13 +55,29 @@ const getFromSpoon = async (caseType, id, ingredients, name) => {
       else ingredientStr += ingredients[i] + ',+'
     }
     let res = await axios.get(
-      `https://api.spoonacular.com/recipes/findByIngredients?ingredients=${ingredientStr}&number=1&ranking=2&ignorePantry=true&apiKey=${SpoonacularAPIKey}`
+      `https://api.spoonacular.com/recipes/findByIngredients?ingredients=${ingredientStr}&number=10&ranking=2&ignorePantry=true&apiKey=${SpoonacularAPIKey}`
     )
+    
+    const filteredRecipe = res.data.filter(recipe => {
+      return recipe.missedIngredientCount === res.data[0].missedIngredientCount;
+    })
+    .sort(function(a, b){return b.likes - a.likes;});
+    // console.log(filteredRecipe);
+    let goodRecipe;
+    for(let i = 0; i < filteredRecipe.length; i++){
+      let id = filteredRecipe[i].id;
+      const response = await axios.get(
+        `https://api.spoonacular.com/recipes/${id}/information?includeNutrition=false&amount=1&apiKey=${SpoonacularAPIKey}`
+      )
+      if(response.data.analyzedInstructions.length){
+        goodRecipe = response.data;
+        break;
+      }
+    }
 
-    let id = res.data[0].id
-    res = await axios.get(
-      `https://api.spoonacular.com/recipes/${id}/information?includeNutrition=false&amount=1&apiKey=${SpoonacularAPIKey}`
-    )
+    // res = await axios.get(
+    //   `https://api.spoonacular.com/recipes/${id}/information?includeNutrition=false&amount=1&apiKey=${SpoonacularAPIKey}`
+    // )
     // const dirtyRecipe = `recipe is for "${res.data.title}." The first step is:
     //   ${res.data.instructions
     //     .split('                                                          ')
@@ -68,7 +85,7 @@ const getFromSpoon = async (caseType, id, ingredients, name) => {
     //     .split('                               ')
     //     .join('. ')}`
     // console.log(recipeFormatter(res.data))
-    return recipeFormatter(res.data)
+    return recipeFormatter(goodRecipe);
   }
 
   if (caseType === 'recipeById') {
@@ -86,12 +103,16 @@ module.exports = getFromSpoon
 
 // getFromSpoon('ingredientByName', 0, [], 'apple')
 //getFromSpoon('ingredientById', 9266, [], null)
-getFromSpoon(
-  'findByIngredients',
-  0,
-  ['chicken', 'tortilla', 'salsa', 'cheese'],
-  null
-)
+async function log(){
+  console.log('recipe found', await getFromSpoon(
+    'findByIngredients',
+    0,
+    ['garlic','chicken','parsley','peppers','onions','corn','cheese'],
+    null
+  ));
+}
+log();
+//,'parsley','peppers','onions','corn','cheese'
 // getFromSpoon('recipeById', 531683, [], null)
 
 // {  "id": 0,
