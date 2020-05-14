@@ -215,23 +215,6 @@ const getFridgeHandler = {
   },
 }
 
-const getIngredientHandler = {
-  canHandle(handlerInput) {
-    return (
-      Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' &&
-      Alexa.getIntentName(handlerInput.requestEnvelope) === 'getIngredient'
-    )
-  },
-  handle(handlerInput) {
-    const speakOutput = `Your ingredient is ${ingredient[0]}.`
-    return handlerInput.responseBuilder
-      .speak(speakOutput)
-      .reprompt(
-        'add a reprompt if you want to keep the session open for the user to respond'
-      )
-      .getResponse()
-  },
-}
 
 const HelpIntentHandler = {
   canHandle(handlerInput) {
