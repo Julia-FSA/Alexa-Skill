@@ -3,7 +3,7 @@ const axios = require('axios')
 const {SpoonacularAPIKey} = require('../secrets.js')
 //let recipe = {};
 // let ingredientArr = [];
-
+console.log(SpoonacularAPIKey);
 const recipeFormatter = (recipe) => {
   let rec = {
     id: recipe.id,
