@@ -15,7 +15,6 @@ const {developerName} = require('./secrets')
 // let fridge = [];
 let ingredient = []
 
-let state = {}
 
 const LaunchRequestHandler = {
   canHandle(handlerInput) {
@@ -30,11 +29,9 @@ const LaunchRequestHandler = {
       'sessionid ----> ',
       handlerInput.requestEnvelope.session.sessionId
     )
-
-    let userId = handlerInput.requestEnvelope.session.user.userId
-    state.userId = userId.slice(18)
-    findOrCreateUser(state.userId)
-
+    const session = handlerInput.requestEnvelope.session;
+    let userId = session.user.userId.slice(18);
+    findOrCreateUser(userId)
     const speakOutput = `Welcome to Julia Cooks. I am running from ${developerName}'s Lambda function. How can I help you today?`
     return handlerInput.responseBuilder
       .speak(speakOutput)
@@ -51,18 +48,44 @@ const findRecipeByIngredientsHandler = {
     )
   },
   async handle(handlerInput) {
-    let spoonacular = await getRecipe(state.userId)
-    const recipe = spoonacular.steps
-    const recipeName = spoonacular.title
-    state.index = 0
+    const session = handlerInput.requestEnvelope.session;
+    let userId = session.user.userId.slice(18);
+    let spoonacular = await getRecipe(userId)
+    const recipe = spoonacular.steps;
+    const recipeName = spoonacular.title;
+    session.selectedRecipe =
+    {
+        'name': recipeName,
+        'steps': recipe,
+        'stepIndex': 0
+    }
+  
     return handlerInput.responseBuilder
-      .speak(`we found a recipe for ${recipeName}. ${recipe[state.index++]}`)
+      .speak(`we found a recipe for ${recipeName}. ${recipe[session.selectedRecipe.stepIndex++]}`)
       .reprompt(
         'add a reprompt if you want to keep the session open for the user to respond'
       )
       .getResponse()
   },
 }
+const nextStepHandler = {
+  canHandle(handlerInput) {
+    return (
+      Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' &&
+      Alexa.getIntentName(handlerInput.requestEnvelope) === 'nextStep'
+    );
+  },
+  handle(handlerInput) {
+    const session = handlerInput.requestEnvelope.session;
+    console.log('----- nextstep', session);
+    return handlerInput.responseBuilder
+      .speak(`The next step is ${session.selectedRecipe.steps[session.selectedRecipe.stepIndex++]}`)
+      .reprompt(
+        'add a reprompt if you want to keep the session open for the user to respond'
+      )
+      .getResponse();
+  },
+};
 
 const getRecipeHandler = {
   canHandle(handlerInput) {
@@ -97,12 +120,14 @@ const addToFridgeHandler = {
     )
   },
   handle(handlerInput) {
+    const session = handlerInput.requestEnvelope.session;
+    let userId = session.user.userId.slice(18);
     const request = handlerInput.requestEnvelope.request
     let speakOutput = ''
     let slotValues = getSlotValues(request.intent.slots)
     if (slotValues && slotValues.food) {
       speakOutput = `Added ${slotValues.food.heardAs} to the fridge`
-      addIngredientToFridge(state.userId, slotValues.food.heardAs, 'each')
+      addIngredientToFridge(userId, slotValues.food.heardAs, 'each')
     } else {
       speakOutput = 'Sorry, i did not hear you.'
     }
@@ -121,12 +146,14 @@ const removeFromFridgeHandler = {
     )
   },
   handle(handlerInput) {
+    const session = handlerInput.requestEnvelope.session;
+    let userId = session.user.userId.slice(18);
     const request = handlerInput.requestEnvelope.request
     let speakOutput = ''
     let slotValues = getSlotValues(request.intent.slots)
     if (slotValues && slotValues.food) {
       speakOutput = `Removed ${slotValues.food.heardAs} from the fridge`
-      removeIngredientFromFridge(slotValues.food.heardAs, state.userId)
+      removeIngredientFromFridge(slotValues.food.heardAs, userId)
     } else {
       speakOutput = 'Sorry, i did not hear you.'
     }
@@ -145,7 +172,9 @@ const getFridgeHandler = {
     )
   },
   async handle(handlerInput) {
-    const fridge = await getFridgeById(state.userId)
+    const session = handlerInput.requestEnvelope.session;
+    let userId = session.user.userId.slice(18);
+    const fridge = await getFridgeById(userId)
     console.log('fridge', Object.keys(fridge))
     const speakOutput = `There is ${Object.keys(fridge).join(
       ', '
@@ -314,6 +343,7 @@ exports.handler = Alexa.SkillBuilders.custom()
     addToFridgeHandler,
     removeFromFridgeHandler,
     getFridgeHandler,
+    nextStepHandler,
     getIngredientHandler,
     findRecipeByIngredientsHandler,
     HelpIntentHandler,
