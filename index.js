@@ -374,7 +374,6 @@ exports.handler = Alexa.SkillBuilders.custom()
 
   .addRequestHandlers(
     LaunchRequestHandler,
-    // getRecipeHandler,
     addToFridgeHandler,
     removeFromFridgeHandler,
     getFridgeHandler,
