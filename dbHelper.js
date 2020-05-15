@@ -155,7 +155,26 @@ const getRecipe = async (userId) => {
   }
 }
 
+
+const clearFridge = async (alexaId) => {
+  try {
+        const stocksParams = {
+          TableName: 'stocks',
+          Key: {id: alexaId},
+          UpdateExpression: 'set ingredients = (ingredients, :ingred)',
+          ExpressionAttributeValues: {
+            ':ingred': {},
+          },
+        }
+        await docClient.update(stocksParams).promise();
+
+  } catch (err) {
+    console.log(err);
+  }
+};
+
 module.exports = {
+  clearFridge,
   addIngredientToFridge,
   getFridgeById,
   getRecipeById,

@@ -3,6 +3,7 @@
 // session persistence, api calls, and more.
 const Alexa = require('ask-sdk-core')
 const {
+  clearFridge,
   addIngredientToFridge,
   getRecipeById,
   getFridgeById,
@@ -189,6 +190,26 @@ const removeFromFridgeHandler = {
       .getResponse()
   },
 }
+const clearFridgeHandler = {
+  canHandle(handlerInput) {
+    return (
+      Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' &&
+      Alexa.getIntentName(handlerInput.requestEnvelope) === 'clearFridge'
+    )
+  },
+  handle(handlerInput) {
+    const session = handlerInput.requestEnvelope.session;
+    let userId = session.user.userId.slice(18);
+    let speakOutput = `Your fridge is empty`
+
+      clearFridge(userId)
+
+    return handlerInput.responseBuilder
+      .speak(speakOutput)
+      .reprompt(generalPrompt)
+      .getResponse()
+  },
+}
 
 const getFridgeHandler = {
   canHandle(handlerInput) {
@@ -365,12 +386,12 @@ function getSlotValues(filledSlots) {
 exports.handler = Alexa.SkillBuilders.custom()
 
   .addRequestHandlers(
+    clearFridgeHandler,
     LaunchRequestHandler,
     addToFridgeHandler,
     removeFromFridgeHandler,
     getFridgeHandler,
     nextStepHandler,
-    getIngredientHandler,
     findRecipeByIngredientsHandler,
     HelpIntentHandler,
     CancelAndStopIntentHandler,
