@@ -5,7 +5,7 @@ const {SpoonacularAPIKey} = require('../secrets.js')
 //let recipe = {};
 // let ingredientArr = [];
 const recipeFormatter = (recipe) => {
-  console.log('formatter', recipe);
+  // console.log('formatter', recipe);
   let rec = {
     id: recipe.id,
     ingredients: [],
@@ -24,10 +24,12 @@ const recipeFormatter = (recipe) => {
       }
     })
   })
+  // console.log('rec', rec)
   return rec
 }
 
 const getFromSpoon = async (caseType, id, ingredients, name) => {
+  console.log('getFromSpoon() inpupts:', caseType, id, ingredients, name)
   if (caseType === 'ingredientByName') {
     axios
       .get(
@@ -54,10 +56,14 @@ const getFromSpoon = async (caseType, id, ingredients, name) => {
       if (i === ingredients.length - 1) ingredientStr += ingredients[i]
       else ingredientStr += ingredients[i] + ',+'
     }
+
+    console.log('pinging spoon......', new Date())
     let res = await axios.get(
-      `https://api.spoonacular.com/recipes/findByIngredients?ingredients=${ingredientStr}&number=10&ranking=2&ignorePantry=true&apiKey=${SpoonacularAPIKey}`
+      `https://api.spoonacular.com/recipes/findByIngredients?ingredients=${ingredientStr}&number=5&ranking=2&ignorePantry=true&apiKey=${SpoonacularAPIKey}`
     )
     
+
+    console.log('ping success!!!!', new Date())
     const filteredRecipe = res.data.filter(recipe => {
       return recipe.missedIngredientCount === res.data[0].missedIngredientCount;
     })
@@ -66,6 +72,8 @@ const getFromSpoon = async (caseType, id, ingredients, name) => {
     let goodRecipe;
     for(let i = 0; i < filteredRecipe.length; i++){
       let id = filteredRecipe[i].id;
+      console.log('id', id)
+      console.log('pinging spoon again', new Date())
       const response = await axios.get(
         `https://api.spoonacular.com/recipes/${id}/information?includeNutrition=false&amount=1&apiKey=${SpoonacularAPIKey}`
       )
@@ -75,16 +83,9 @@ const getFromSpoon = async (caseType, id, ingredients, name) => {
       }
     }
 
-    // res = await axios.get(
-    //   `https://api.spoonacular.com/recipes/${id}/information?includeNutrition=false&amount=1&apiKey=${SpoonacularAPIKey}`
-    // )
-    // const dirtyRecipe = `recipe is for "${res.data.title}." The first step is:
-    //   ${res.data.instructions
-    //     .split('                                                          ')
-    //     .join('\n ++')
-    //     .split('                               ')
-    //     .join('. ')}`
-    // console.log(recipeFormatter(res.data))
+    console.log('SUCCESS AGAIN', new Date())
+
+    // console.log('goodRecipe', goodRecipe)
     return recipeFormatter(goodRecipe);
   }
 

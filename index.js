@@ -48,19 +48,20 @@ const findRecipeByIngredientsHandler = {
     )
   },
   async handle(handlerInput) {
-    console.log('handlerInput in findRecipeByIngredientsHandler ---->', handlerInput)
+    console.log('SEARCHING FOR A RECIPE')
     const session = handlerInput.requestEnvelope.session;
     let userId = session.user.userId.slice(18);
     let spoonacular = await getRecipe(userId)
+    console.log('SPOONACULAR found recipe in eHandler -> ', spoonacular)
     let speakOutput = '';
     if(!spoonacular){
       speakOutput = `We can't find a recipe based on what you have. Please buy more stuff.`
     } else {
       const recipe = spoonacular.steps;
       const recipeName = spoonacular.title;
-      console.log(spoonacular.ingredients);
+      // console.log(spoonacular.ingredients);
       const ingredients = spoonacular.ingredients.filter((item,index) => (index%2=== 1)).join(', ');
-      console.log(ingredients);
+      // console.log(ingredients);
       const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
       const selectedRecipe = {
           'name': recipeName,
@@ -81,6 +82,7 @@ const findRecipeByIngredientsHandler = {
       .getResponse()
   },
 }
+
 const nextStepHandler = {
   canHandle(handlerInput) {
     return (
@@ -89,7 +91,7 @@ const nextStepHandler = {
     );
   },
   handle(handlerInput) {
-    console.log('handlerInput in findRecipeByIngredientsHandler ---->', handlerInput)
+    console.log('handlerInput in nextStepHandler ---->', handlerInput)
     const session = handlerInput.requestEnvelope.session;
     session.attributes.selectedRecipe.stepIndex++
 
@@ -370,7 +372,6 @@ exports.handler = Alexa.SkillBuilders.custom()
     removeFromFridgeHandler,
     getFridgeHandler,
     nextStepHandler,
-    getIngredientHandler,
     findRecipeByIngredientsHandler,
     HelpIntentHandler,
     CancelAndStopIntentHandler,
