@@ -33,7 +33,7 @@ const LaunchRequestHandler = {
     const session = handlerInput.requestEnvelope.session;
     let userId = session.user.userId.slice(18);
     findOrCreateUser(userId)
-    const speakOutput = `Welcome to Julia Cooks. I am running from ${developerName}'s Lambda function. How can I help you today?`
+    const speakOutput = `Welcome to Julia Cooks. I can manage your refridgerator and suggest recipes. How can I help you today?`
     return handlerInput.responseBuilder
       .speak(speakOutput)
       .reprompt(speakOutput)
@@ -49,11 +49,9 @@ const findRecipeByIngredientsHandler = {
     )
   },
   async handle(handlerInput) {
-    console.log('SEARCHING FOR A RECIPE')
     const session = handlerInput.requestEnvelope.session;
     let userId = session.user.userId.slice(18);
     let spoonacular = await getRecipe(userId)
-    console.log('SPOONACULAR found recipe in eHandler -> ', spoonacular)
     let speakOutput = '';
     if(!spoonacular){
       speakOutput = `We can't find a recipe based on what you have. Please buy more stuff.`
@@ -92,7 +90,6 @@ const nextStepHandler = {
     );
   },
   handle(handlerInput) {
-    console.log('handlerInput in nextStepHandler ---->', handlerInput)
     const session = handlerInput.requestEnvelope.session;
     session.attributes.selectedRecipe.stepIndex++
 
