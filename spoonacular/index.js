@@ -29,7 +29,7 @@ const recipeFormatter = (recipe) => {
 }
 
 const getFromSpoon = async (caseType, id, ingredients, name) => {
-  console.log('getFromSpoon() inpupts:', caseType, id, ingredients, name)
+  // console.log('getFromSpoon() inpupts:', caseType, id, ingredients, name)
   if (caseType === 'ingredientByName') {
     axios
       .get(
@@ -57,13 +57,13 @@ const getFromSpoon = async (caseType, id, ingredients, name) => {
       else ingredientStr += ingredients[i] + ',+'
     }
 
-    console.log('pinging spoon......', new Date())
+    // console.log('pinging spoon......', new Date())
     let res = await axios.get(
       `https://api.spoonacular.com/recipes/findByIngredients?ingredients=${ingredientStr}&number=5&ranking=2&ignorePantry=true&apiKey=${SpoonacularAPIKey}`
     )
-    
 
-    console.log('ping success!!!!', new Date())
+
+    // console.log('ping success!!!!', new Date())
     const filteredRecipe = res.data.filter(recipe => {
       return recipe.missedIngredientCount === res.data[0].missedIngredientCount;
     })
@@ -72,8 +72,7 @@ const getFromSpoon = async (caseType, id, ingredients, name) => {
     let goodRecipe;
     for(let i = 0; i < filteredRecipe.length; i++){
       let id = filteredRecipe[i].id;
-      console.log('id', id)
-      console.log('pinging spoon again', new Date())
+
       const response = await axios.get(
         `https://api.spoonacular.com/recipes/${id}/information?includeNutrition=false&amount=1&apiKey=${SpoonacularAPIKey}`
       )
@@ -83,7 +82,7 @@ const getFromSpoon = async (caseType, id, ingredients, name) => {
       }
     }
 
-    console.log('SUCCESS AGAIN', new Date())
+    // console.log('SUCCESS AGAIN', new Date())
 
     // console.log('goodRecipe', goodRecipe)
     return recipeFormatter(goodRecipe);
@@ -104,15 +103,15 @@ module.exports = getFromSpoon
 
 // getFromSpoon('ingredientByName', 0, [], 'apple')
 //getFromSpoon('ingredientById', 9266, [], null)
-async function log(){
-  console.log('recipe found', await getFromSpoon(
-    'findByIngredients',
-    0,
-    ['garlic','chicken','parsley','peppers','onions','corn','cheese'],
-    null
-  ));
-}
-log();
+// async function log(){
+//   console.log('recipe found', await getFromSpoon(
+//     'findByIngredients',
+//     0,
+//     ['garlic','chicken','parsley','peppers','onions','corn','cheese'],
+//     null
+//   ));
+// }
+// log();
 //,'parsley','peppers','onions','corn','cheese'
 // getFromSpoon('recipeById', 531683, [], null)
 
