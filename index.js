@@ -236,6 +236,21 @@ const getFridgeHandler = {
   },
 }
 
+const HelpHandler = {
+  canHandle(handlerInput) {
+    return (
+      Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' &&
+      Alexa.getIntentName(handlerInput.requestEnvelope) === 'help'
+    )
+  },
+  handle(handlerInput) {
+    const speakOutput = 'You can say add blank to fridge to add ingredients to your stock. You can also ask what can I make, to find recipes. clear fridge to empty it of all ingredients.'
+    return handlerInput.responseBuilder
+      .speak(speakOutput)
+      .reprompt(generalReprompt)
+      .getResponse()
+  },
+}
 
 const HelpIntentHandler = {
   canHandle(handlerInput) {
@@ -386,6 +401,7 @@ function getSlotValues(filledSlots) {
 exports.handler = Alexa.SkillBuilders.custom()
 
   .addRequestHandlers(
+    HelpHandler,
     clearFridgeHandler,
     LaunchRequestHandler,
     addToFridgeHandler,
