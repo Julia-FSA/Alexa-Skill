@@ -152,6 +152,8 @@ const addToFridgeHandler = {
     let speakOutput = ''
     let slotValues = getSlotValues(request.intent.slots)
     if (slotValues && slotValues.food) {
+      console.log('slotValues.food', slotValues.food)
+      console.log('slotValues.food.heardAs', slotValues.food.heardAs)
       speakOutput = `Added ${slotValues.food.heardAs} to the fridge`
       addIngredientToFridge(userId, slotValues.food.heardAs, 'each')
     } else {
