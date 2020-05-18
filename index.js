@@ -13,9 +13,7 @@ const {
 } = require('./dbHelper')
 const generalPrompt = 'Is there anything else I can do?'
 const {developerName} = require('./secrets')
-// let fridge = [];
-let ingredient = []
-
+const generalReprompt = 'Ask for help at any point'
 
 const LaunchRequestHandler = {
   canHandle(handlerInput) {
@@ -36,7 +34,7 @@ const LaunchRequestHandler = {
     const speakOutput = `Welcome to Julia Cooks. I can manage your refridgerator and suggest recipes. How can I help you today?`
     return handlerInput.responseBuilder
       .speak(speakOutput)
-      .reprompt(speakOutput)
+      .reprompt(generalReprompt)
       .getResponse()
   },
 }
@@ -105,9 +103,7 @@ const nextStepHandler = {
 
     return handlerInput.responseBuilder
       .speak(speakOutput)
-      .reprompt(
-        'add a reprompt if you want to keep the session open for the user to respond'
-      )
+      .reprompt(generalReprompt)
       .getResponse();
   },
 };
@@ -224,14 +220,17 @@ const getFridgeHandler = {
     const session = handlerInput.requestEnvelope.session;
     let userId = session.user.userId.slice(18);
     const fridge = await getFridgeById(userId)
-    console.log('fridge', Object.keys(fridge))
-    const speakOutput = `There is ${Object.keys(fridge).join(
-      ', '
-    )} in your fridge`
+    let speakOutput = ''
+    let fridgeIng = Object.keys(fridge).join(', ')
+    if(fridgeIng.length > 0) {
+      speakOutput = `There is ${fridgeIng} in your fridge`
+    } else {
+      speakOutput = 'Your fridge is empty'
+    }
     return handlerInput.responseBuilder
       .speak(speakOutput)
       .reprompt(
-        'add a reprompt if you want to keep the session open for the user to respond'
+        generalReprompt
       )
       .getResponse()
   },

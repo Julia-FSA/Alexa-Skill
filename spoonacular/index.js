@@ -61,7 +61,7 @@ const getFromSpoon = async (caseType, id, ingredients, name) => {
     let res = await axios.get(
       `https://api.spoonacular.com/recipes/findByIngredients?ingredients=${ingredientStr}&number=5&ranking=2&ignorePantry=true&apiKey=${SpoonacularAPIKey}`
     )
-    
+
 
     console.log('ping success!!!!', new Date())
     const filteredRecipe = res.data.filter(recipe => {
@@ -104,15 +104,15 @@ module.exports = getFromSpoon
 
 // getFromSpoon('ingredientByName', 0, [], 'apple')
 //getFromSpoon('ingredientById', 9266, [], null)
-async function log(){
-  console.log('recipe found', await getFromSpoon(
-    'findByIngredients',
-    0,
-    ['garlic','chicken','parsley','peppers','onions','corn','cheese'],
-    null
-  ));
-}
-log();
+// async function log(){
+//   console.log('recipe found', await getFromSpoon(
+//     'findByIngredients',
+//     0,
+//     ['garlic','chicken','parsley','peppers','onions','corn','cheese'],
+//     null
+//   ));
+// }
+// log();
 //,'parsley','peppers','onions','corn','cheese'
 // getFromSpoon('recipeById', 531683, [], null)
 

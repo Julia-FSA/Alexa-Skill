@@ -156,12 +156,12 @@ const getRecipe = async (userId) => {
 }
 
 
-const clearFridge = async (alexaId) => {
+const clearFridge = async (userId) => {
   try {
         const stocksParams = {
           TableName: 'stocks',
-          Key: {id: alexaId},
-          UpdateExpression: 'set ingredients = (ingredients, :ingred)',
+          Key: {id: userId},
+          UpdateExpression: 'set ingredients = :ingred',
           ExpressionAttributeValues: {
             ':ingred': {},
           },
