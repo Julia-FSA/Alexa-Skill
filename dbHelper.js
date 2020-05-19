@@ -1,5 +1,5 @@
 const AWS = require('aws-sdk')
-// const getFromSpoon = require('./spoonacular')
+const getFromSpoon = require('./spoonacular')
 // const { v4: uuidv4 } = require("uuid");
 
 AWS.config.update({region: 'us-east-2'})
@@ -240,20 +240,19 @@ const connectAlexaToWeb = async (alexaId, passcode) => {
 
 const clearFridge = async (userId) => {
   try {
-        const stocksParams = {
-          TableName: 'stocks',
-          Key: {id: userId},
-          UpdateExpression: 'set ingredients = :ingred',
-          ExpressionAttributeValues: {
-            ':ingred': {},
-          },
-        }
-        await docClient.update(stocksParams).promise();
-
+    const stocksParams = {
+      TableName: 'stocks',
+      Key: {id: userId},
+      UpdateExpression: 'set ingredients = :ingred',
+      ExpressionAttributeValues: {
+        ':ingred': {},
+      },
+    }
+    await docClient.update(stocksParams).promise()
   } catch (err) {
-    console.log(err);
+    console.log(err)
   }
-};
+}
 
 module.exports = {
   clearFridge,
