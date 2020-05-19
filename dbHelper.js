@@ -1,17 +1,12 @@
 const AWS = require('aws-sdk')
+// const getFromSpoon = require('./spoonacular')
 // const { v4: uuidv4 } = require("uuid");
-const getFromSpoon = require('./spoonacular')
 
 AWS.config.update({region: 'us-east-2'})
-// const tableName = "ingredients";
-
-// var dbHelper = function () { };
 const docClient = new AWS.DynamoDB.DocumentClient()
 
 const findOrCreateUser = async (userId) => {
   try {
-    console.log('findOrCreateUser()')
-
     const userParams = {
       TableName: 'users',
       Key: {id: userId},
@@ -155,6 +150,93 @@ const getRecipe = async (userId) => {
   }
 }
 
+// Utility function for "connectAlexaToWeb" below
+// step 3. delete the web user row
+const deleteWebUser = async (webUserData, uuid) => {
+  const params = {
+    TableName: 'users',
+    Key: {
+      id: webUserData.id,
+    },
+  }
+
+  await docClient.delete(params, function (err, data) {
+    if (err) {
+      console.error(
+        'Unable to delete item. Error JSON:',
+        JSON.stringify(err, null, 2)
+      )
+    } else {
+      console.log('SUCCESSFULLY DELETED >>>>>>>>>>>>>>>>', data)
+    }
+  })
+}
+
+// Utility function for "connectAlexaToWeb" below
+// step 2. copyz the info to the row where the PK is Alexa Id
+const copyUserData = async (alexaId, userData, passcode) => {
+  const params = {
+    TableName: 'users',
+    Key: {
+      id: alexaId,
+    },
+    UpdateExpression:
+      'set first_name = :f, last_name=:l, password=:p, salt=:s, email=:e',
+    ExpressionAttributeValues: {
+      ':f': userData.first_name,
+      ':l': userData.last_name,
+      ':p': userData.password,
+      ':s': userData.salt,
+      ':e': userData.email,
+    },
+    ReturnValues: 'ALL_NEW',
+  }
+
+  await docClient.update(params, function (err, data) {
+    if (err) {
+      console.error(
+        'Unable to add item. Error JSON:',
+        JSON.stringify(err, null, 2)
+      )
+    } else {
+      deleteWebUser(userData, passcode)
+    }
+  })
+}
+
+const connectAlexaToWeb = async (alexaId, passcode) => {
+  // step 1. find the web user
+  passcode = +passcode
+  try {
+    let params = {
+      TableName: 'users',
+      FilterExpression: '#passcode = :passcode',
+      ExpressionAttributeNames: {
+        '#passcode': 'passcode',
+      },
+      ExpressionAttributeValues: {
+        ':passcode': passcode,
+      },
+    }
+
+    await docClient.scan(params, function (err, data) {
+      if (err) {
+        console.error(
+          'Unable to read item. Error JSON:',
+          JSON.stringify(err, null, 2)
+        )
+      } else {
+        let result = data.Items[0]
+        copyUserData(alexaId, result, passcode)
+      }
+    })
+  } catch (err) {
+    console.error(
+      'Unable to read stock. Error JSON:',
+      JSON.stringify(err, null, 2)
+    )
+  }
+}
 
 const clearFridge = async (userId) => {
   try {
@@ -182,4 +264,5 @@ module.exports = {
   getRecipe,
   findOrCreateUser,
   removeIngredientFromFridge,
+  connectAlexaToWeb,
 }
