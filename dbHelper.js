@@ -28,6 +28,33 @@ const findOrCreateUser = async (userId) => {
   }
 }
 
+const putRecipeInDB = async (recipe, userId) => {
+  try {
+    const userParams = {
+      TableName: 'users',
+      Key: {id: userId},
+      UpdateExpression: 'set recipes = if_not_exists(recipes, :recipes)',
+       ExpressionAttributeValues: {
+         ':recipes': recipe.id,
+       },
+    }
+
+    await docClient.update(userParams).promise()
+
+    const params = {
+      TableName: 'recipes',
+      Key: {id: recipe.id},
+      UpdateExpression: 'set recipe = if_not_exists(recipe, :recipe)',
+       ExpressionAttributeValues: {
+         ':recipe': recipe,
+       },
+    }
+    await docClient.update(params).promise()
+  } catch (err) {
+    console.log(err)
+  }
+}
+
 const getFridgeById = async (userId) => {
   try {
     const params = {
@@ -257,6 +284,7 @@ const clearFridge = async (userId) => {
 module.exports = {
   clearFridge,
   addIngredientToFridge,
+  putRecipeInDB,
   getFridgeById,
   getRecipeById,
   getRecipeByTitle,
