@@ -12,9 +12,9 @@ const {
   getRecipe,
   connectAlexaToWeb,
 } = require('./dbHelper')
-const {developerName} = require('./secrets')
 const generalPrompt = 'Is there anything else I can do?'
 const generalReprompt = 'Ask for help at any point'
+
 
 const LaunchRequestHandler = {
   canHandle(handlerInput) {
@@ -46,28 +46,62 @@ const findRecipeByIngredientsHandler = {
   async handle(handlerInput) {
     const session = handlerInput.requestEnvelope.session
     let userId = session.user.userId.slice(18)
-    let spoonacular = await getRecipe(userId)
+    let recipes = await getRecipe(userId)
+    let spoonacular = recipes[0]
     let speakOutput = ''
+    let reprompt = ''
     if (!spoonacular) {
       speakOutput = `We can't find a recipe based on what you have. Please buy more stuff.`
     } else {
-      const recipe = spoonacular.steps
       const recipeName = spoonacular.title
       const ingredients = spoonacular.ingredients
-        .filter((item, index) => index % 2 === 1)
+        .filter((item) => typeof item === 'string')
         .join(', ')
       const sessionAttributes = handlerInput.attributesManager.getSessionAttributes()
-
+      if(recipes.length > 1){
+        reprompt = `we found a recipe for ${recipeName}. You will need the following ingredients, ${ingredients}`
+      }
       const selectedRecipe = {
-        name: recipeName,
-        steps: recipe,
+        name: recipes[0].title,
+        steps: recipes[0].steps,
         stepIndex: 0,
       }
-      sessionAttributes.selectedRecipe = selectedRecipe
+      const backupRecipe = {
+        name: recipes[1].title,
+        steps: recipes[1].steps,
+        stepIndex: 0,
+      }
+      sessionAttributes.selectedRecipe = selectedRecipe;
+      sessionAttributes.backupRecipe = backupRecipe;
       handlerInput.attributesManager.setSessionAttributes(sessionAttributes)
       speakOutput = `we found a recipe for ${recipeName}. You will need the following ingredients, ${ingredients}`
     }
 
+    return handlerInput.responseBuilder
+      .speak(speakOutput)
+      .reprompt(`is this recipe okay? I also have ${recipes[1].title},  if you would prefer this one instead please say next recipe`)
+      .getResponse()
+  },
+}
+
+const nextRecipeHandler = {
+  canHandle(handlerInput) {
+    return (
+      Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' &&
+      Alexa.getIntentName(handlerInput.requestEnvelope) === 'nextRecipe'
+    )
+  },
+  handle(handlerInput) {
+    let speakOutput = '';
+    const session = handlerInput.requestEnvelope.session;
+    const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+    if (session.attributes.backupRecipe.hasOwnProperty(name)){
+          sessionAttributes.selectedRecipe = session.attributes.backupRecipe;
+    handlerInput.attributesManager.setSessionAttributes(sessionAttributes)
+     speakOutput = 'Okay, lets go with that one instead'
+    }else {
+      speakOutput = 'sorry we dont have another recipe'
+    }
     return handlerInput.responseBuilder
       .speak(speakOutput)
       .reprompt(generalReprompt)
@@ -139,15 +173,15 @@ const addToFridgeHandler = {
     )
   },
   handle(handlerInput) {
-    console.log('handlerInput in addToFridgeHandler ---->', handlerInput)
+
     const session = handlerInput.requestEnvelope.session
     let userId = session.user.userId.slice(18)
     const request = handlerInput.requestEnvelope.request
     let speakOutput = ''
     let slotValues = getSlotValues(request.intent.slots)
-    if (slotValues && slotValues.food) {
-      console.log('slotValues.food', slotValues.food)
-      console.log('slotValues.food.heardAs', slotValues.food.heardAs)
+    if (slotValues.food.heardAs === 'undefined' || slotValues.food.heardAs === undefined){
+      speakOutput = 'sorry I did not understand that'
+    } else if (slotValues && slotValues.food) {
       speakOutput = `Added ${slotValues.food.heardAs} to the fridge`
       addIngredientToFridge(userId, slotValues.food.heardAs, 'each')
     } else {
@@ -477,6 +511,7 @@ exports.handler = Alexa.SkillBuilders.custom()
 
   .addRequestHandlers(
     HelpHandler,
+    nextRecipeHandler,
     clearFridgeHandler,
     LaunchRequestHandler,
     addToFridgeHandler,
