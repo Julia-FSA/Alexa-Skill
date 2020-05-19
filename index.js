@@ -3,6 +3,7 @@
 // session persistence, api calls, and more.
 const Alexa = require('ask-sdk-core')
 const {
+  clearFridge,
   addIngredientToFridge,
   getRecipeById,
   getFridgeById,
@@ -11,10 +12,9 @@ const {
   getRecipe,
   connectAlexaToWeb,
 } = require('./dbHelper')
-const generalPrompt = 'Is there anything else I can do?'
 const {developerName} = require('./secrets')
-// let fridge = [];
-let ingredient = []
+const generalPrompt = 'Is there anything else I can do?'
+const generalReprompt = 'Ask for help at any point'
 
 const LaunchRequestHandler = {
   canHandle(handlerInput) {
@@ -33,9 +33,11 @@ const LaunchRequestHandler = {
     let userId = session.user.userId.slice(18)
     findOrCreateUser(userId)
     const speakOutput = `Welcome to Julia Cooks. How can I help you today?`
+//     const speakOutput = `Welcome to Julia Cooks. I can manage your refridgerator and suggest recipes. How can I help you today?`
+
     return handlerInput.responseBuilder
       .speak(speakOutput)
-      .reprompt(speakOutput)
+      .reprompt(generalReprompt)
       .getResponse()
   },
 }
@@ -48,10 +50,6 @@ const findRecipeByIngredientsHandler = {
     )
   },
   async handle(handlerInput) {
-    // console.log(
-    //   'handlerInput in findRecipeByIngredientsHandler ---->',
-    //   handlerInput
-    // )
     const session = handlerInput.requestEnvelope.session
     let userId = session.user.userId.slice(18)
     let spoonacular = await getRecipe(userId)
@@ -59,14 +57,13 @@ const findRecipeByIngredientsHandler = {
     if (!spoonacular) {
       speakOutput = `We can't find a recipe based on what you have. Please buy more stuff.`
     } else {
-      const recipe = spoonacular.steps
-      const recipeName = spoonacular.title
-      console.log(spoonacular.ingredients)
-      const ingredients = spoonacular.ingredients
-        .filter((item, index) => index % 2 === 1)
-        .join(', ')
-      console.log(ingredients)
-      const sessionAttributes = handlerInput.attributesManager.getSessionAttributes()
+      const recipe = spoonacular.steps;
+      const recipeName = spoonacular.title;
+      // console.log(spoonacular.ingredients);
+      const ingredients = spoonacular.ingredients.filter((item,index) => (index%2=== 1)).join(', ');
+      // console.log(ingredients);
+      const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+
       const selectedRecipe = {
         name: recipeName,
         steps: recipe,
@@ -79,12 +76,11 @@ const findRecipeByIngredientsHandler = {
 
     return handlerInput.responseBuilder
       .speak(speakOutput)
-      .reprompt(
-        'add a reprompt if you want to keep the session open for the user to respond'
-      )
+      .reprompt(generalReprompt)
       .getResponse()
   },
 }
+
 const nextStepHandler = {
   canHandle(handlerInput) {
     return (
@@ -93,10 +89,6 @@ const nextStepHandler = {
     )
   },
   handle(handlerInput) {
-    // console.log(
-    //   'handlerInput in findRecipeByIngredientsHandler ---->',
-    //   handlerInput
-    // )
     const session = handlerInput.requestEnvelope.session
     session.attributes.selectedRecipe.stepIndex++
 
@@ -116,10 +108,8 @@ const nextStepHandler = {
 
     return handlerInput.responseBuilder
       .speak(speakOutput)
-      .reprompt(
-        'add a reprompt if you want to keep the session open for the user to respond'
-      )
-      .getResponse()
+      .reprompt(generalReprompt)
+      .getResponse();
   },
 }
 
@@ -163,6 +153,8 @@ const addToFridgeHandler = {
     let speakOutput = ''
     let slotValues = getSlotValues(request.intent.slots)
     if (slotValues && slotValues.food) {
+      console.log('slotValues.food', slotValues.food)
+      console.log('slotValues.food.heardAs', slotValues.food.heardAs)
       speakOutput = `Added ${slotValues.food.heardAs} to the fridge`
       addIngredientToFridge(userId, slotValues.food.heardAs, 'each')
     } else {
@@ -200,32 +192,57 @@ const removeFromFridgeHandler = {
       .getResponse()
   },
 }
+const clearFridgeHandler = {
+  canHandle(handlerInput) {
+    return (
+      Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' &&
+      Alexa.getIntentName(handlerInput.requestEnvelope) === 'clearFridge'
+    )
+  },
+  handle(handlerInput) {
+    const session = handlerInput.requestEnvelope.session;
+    let userId = session.user.userId.slice(18);
+    let speakOutput = `Your fridge is empty`
 
-// const getFridgeHandler = {
-//   canHandle(handlerInput) {
-//     return (
-//       Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' &&
-//       Alexa.getIntentName(handlerInput.requestEnvelope) === 'getFridge'
-//     )
-//   },
-//   async handle(handlerInput) {
-//     console.log('handlerInput in getFridgeHandler ---->', handlerInput)
-//     const session = handlerInput.requestEnvelope.session
-//     let userId = session.user.userId.slice(18)
-//     const fridge = await getFridgeById(userId)
-//     console.log('fridge', Object.keys(fridge))
-//     const speakOutput = `There is ${Object.keys(fridge).join(
-//       ', '
-//     )} in your fridge`
-//     return handlerInput.responseBuilder
-//       .speak(speakOutput)
-//       .reprompt(
-//         'add a reprompt if you want to keep the session open for the user to respond'
-//       )
-//       .getResponse()
-//   },
-// }
+      clearFridge(userId)
 
+    return handlerInput.responseBuilder
+      .speak(speakOutput)
+      .reprompt(generalPrompt)
+      .getResponse()
+  },
+}
+
+const getFridgeHandler = {
+  canHandle(handlerInput) {
+    return (
+      Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' &&
+      Alexa.getIntentName(handlerInput.requestEnvelope) === 'getFridge'
+    )
+  },
+  
+  async handle(handlerInput) {
+    console.log('handlerInput in getFridgeHandler ---->', handlerInput)
+    const session = handlerInput.requestEnvelope.session;
+    let userId = session.user.userId.slice(18);
+    const fridge = await getFridgeById(userId)
+    let speakOutput = ''
+    let fridgeIng = Object.keys(fridge).join(', ')
+    if(fridgeIng.length > 0) {
+      speakOutput = `There is ${fridgeIng} in your fridge`
+    } else {
+      speakOutput = 'Your fridge is empty'
+    }
+    return handlerInput.responseBuilder
+      .speak(speakOutput)
+      .reprompt(
+        generalReprompt
+      )
+      .getResponse()
+  },
+}
+
+    
 /***************************************************************************/
 /***************************************************************************/
 /***************************************************************************/
@@ -247,7 +264,7 @@ const AlexaWebConnectionHandler = {
     const session = handlerInput.requestEnvelope.session
     alexaId = session.user.userId.slice(18)
     // console.log('alexaId >>>>>>>>>>>>>>>>>>', alexaId)
-
+    
     const speakOutput = 'Please say your passcode one digit at a time.'
     // For example, for john@email.com, say j o h n at e m a i l dot c o m. Please say your email now.'
     // connectAlexaToWeb(alexaId, email, uuid)
@@ -260,37 +277,6 @@ const AlexaWebConnectionHandler = {
   // console.log('ANSWER >>>>>>>>>>>>>>>>', answer)
 }
 
-// const AnswerIntentHandler = {
-//   canHandle(handlerInput) {
-//     return (
-//       Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' &&
-//       Alexa.getIntentName(handlerInput.requestEnvelope) === 'AnswerIntent'
-//     )
-//     // return (
-//     //   handlerInput.requestEnvelope.request.type === 'IntentRequest' &&
-//     //   handlerInput.requestEnvelope.request.intent.name === 'AnswerIntent'
-//     // )
-//   },
-//   handle(handlerInput) {
-//     console.log('ANSWER INTENT TRIGGERED !!!!!!!!!!!!!!!!!!!')
-//     const slots = handlerInput.requestEnvelope.request.intent.slots
-//     console.log(
-//       'handlerInput.requestEnvelope.request.intent*********************',
-//       handlerInput.requestEnvelope.request.intent
-//     )
-//     passcode = slots.emailAnswer.value
-//     const speechText = `Your passcode is ${passcode}`
-//     // `If your email is not: ${userEmail.forEach(
-//     //   (character) => character
-//     // )}, please say your email again. If the email is correct, please say your 8 digit Alexa Code now.`
-
-//     return handlerInput.responseBuilder
-//       .speak(speechText)
-//       .reprompt(speechText)
-//       .withSimpleCard('What did I learn', speechText)
-//       .getResponse()
-//   },
-// }
 
 const AnswerIntentAlexaIdHandler = {
   canHandle(handlerInput) {
@@ -329,6 +315,13 @@ const ConfirmCodeHandler = {
   handle(handlerInput) {
     console.log('ConfirmCode INTENT TRIGGERED !!!!!!!!!!!!!!!!!!!')
     connectAlexaToWeb(alexaId, passcode)
+    
+    // JOHN: USE THIS CODE
+//     const session = handlerInput.requestEnvelope.session
+//     const sessionAttributes = handlerInput.attributesManager.getSessionAttributes()
+//     sessionAttributes.passcode = passcode
+//     sessionAttributes.alexaId = alexaId
+    
     const speechText =
       'Your online account has been successfully linked to your Alexa account. Thank you for using Julia.'
     // refer to line 69-76 if it works.
@@ -336,6 +329,22 @@ const ConfirmCodeHandler = {
     return handlerInput.responseBuilder
       .speak(speechText)
       .reprompt(speechText)
+      .getResponse()
+  },
+}
+
+const HelpHandler = {
+  canHandle(handlerInput) {
+    return (
+      Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' &&
+      Alexa.getIntentName(handlerInput.requestEnvelope) === 'help'
+    )
+  },
+  handle(handlerInput) {
+    const speakOutput = 'You can say add blank to fridge to add ingredients to your stock. You can also ask what can I make, to find recipes. clear fridge to empty it of all ingredients.'
+    return handlerInput.responseBuilder
+      .speak(speakOutput)
+      .reprompt(generalReprompt)
       .getResponse()
   },
 }
@@ -493,14 +502,15 @@ function getSlotValues(filledSlots) {
 exports.handler = Alexa.SkillBuilders.custom()
 
   .addRequestHandlers(
+    HelpHandler,
+    clearFridgeHandler,
     LaunchRequestHandler,
     addToFridgeHandler,
     removeFromFridgeHandler,
-    // getFridgeHandler,
+    getFridgeHandler,
     nextStepHandler,
-    // getIngredientHandler,
+    getIngredientHandler,
     AlexaWebConnectionHandler,
-    // AnswerIntentHandler,
     AnswerIntentAlexaIdHandler,
     ConfirmCodeHandler,
     findRecipeByIngredientsHandler,
@@ -508,7 +518,7 @@ exports.handler = Alexa.SkillBuilders.custom()
     CancelAndStopIntentHandler,
     RepeatHandler,
     SessionEndedRequestHandler
-    // IntentReflectorHandler // make sure IntentReflectorHandler is last so it doesn't override your custom intent handlers
+    IntentReflectorHandler // make sure IntentReflectorHandler is last so it doesn't override your custom intent handlers
   )
   .addErrorHandlers(ErrorHandler)
   .lambda()
