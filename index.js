@@ -2,6 +2,7 @@
 // Please visit https://alexa.design/cookbook for additional examples on implementing slots, dialog management,
 // session persistence, api calls, and more.
 const Alexa = require("ask-sdk-core");
+const { getFromSpoon } = require('./spoonacular/index')
 const {
   clearFridge,
   addIngredientToFridge,
@@ -51,7 +52,7 @@ const findRecipeByIngredientsHandler = {
     let speakOutput = "";
     let reprompt = "";
     if (!spoonacular) {
-      speakOutput = `We can't find a recipe based on what you have. Please buy more stuff.`;
+      speakOutput = `We can't find a recipe based on what you have. Please either add more ingredients or remove the more random ingredients you have.`;
     } else {
       const recipeName = spoonacular.title;
       const ingredients = []
@@ -89,7 +90,7 @@ const findRecipeByIngredientsHandler = {
       sessionAttributes.selectedRecipe = selectedRecipe;
       sessionAttributes.backupRecipe = backupRecipe;
       handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
-      speakOutput = `we found a recipe for ${recipeName}. You will need the following ingredients, ${ingredients}`;
+      speakOutput = `we found a recipe for ${recipeName}. You will need the following ingredients, ${ingredients},  ask what is the first step to begin`;
     }
 
     return handlerInput.responseBuilder
@@ -121,7 +122,7 @@ const nextRecipeHandler = {
     })
 
     handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
-    speakOutput = `Okay, lets go with ${recipeTitle} instead, you will need ${ingredients}`;
+    speakOutput = `Okay, lets go with ${recipeTitle} instead, you will need ${ingredients}, ask for the first step to begin`;
 
     return handlerInput.responseBuilder
       .speak(speakOutput)
@@ -155,7 +156,7 @@ const nextStepHandler = {
       selectedRecipe.steps[selectedRecipe.stepIndex - 1]
     }${statement}`;
     sessionAttributes.lastResponse = speakOutput;
-    
+
     if (!selectedRecipe.steps[selectedRecipe.stepIndex]){
     sessionAttributes.selectedRecipe.ingredients.forEach((ingr) => {
       removeIngredientFromFridge(ingr.name, userId)
@@ -169,31 +170,7 @@ const nextStepHandler = {
       .getResponse();
   },
 };
-
-// const getRecipeHandler = {
-//   canHandle(handlerInput) {
-//     return (
-//       Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' &&
-//       Alexa.getIntentName(handlerInput.requestEnvelope) === 'getRecipe'
-//     )
-//   },
-//   handle(handlerInput) {
-//     const request = handlerInput.requestEnvelope.request
-//     let speakOutput = ''
-//     let slotValues = getSlotValues(request.intent.slots)
-//     if (slotValues && slotValues.food) {
-//       speakOutput = `Added ${slotValues.food.heardAs} to the fridge`
-//       fridge.push(slotValues.food.heardAs)
-//       addIngredientToFridge(slotValues.food.heardAs, 'each')
-//     } else {
-//       speakOutput = 'Sorry, i did not hear you.'
-//     }
-//     return handlerInput.responseBuilder
-//       .speak(speakOutput)
-//       .reprompt(generalPrompt)
-//       .getResponse()
-//   },
-// }
+//************************************************!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! */
 
 const addToFridgeHandler = {
   canHandle(handlerInput) {
@@ -202,7 +179,7 @@ const addToFridgeHandler = {
       Alexa.getIntentName(handlerInput.requestEnvelope) === "addToFridge"
     );
   },
-  handle(handlerInput) {
+  async handle(handlerInput) {
     const session = handlerInput.requestEnvelope.session;
     let userId = session.user.userId.slice(18);
     const request = handlerInput.requestEnvelope.request;
@@ -214,8 +191,14 @@ const addToFridgeHandler = {
     ) {
       speakOutput = "sorry I did not understand that";
     } else if (slotValues && slotValues.food) {
-      speakOutput = `Added ${slotValues.food.heardAs} to the fridge`;
-      addIngredientToFridge(userId, slotValues.food.heardAs, "each");
+     let ingredient =  await getFromSpoon('ingredientByName', null, null,  slotValues.food.heardAs)
+      let ingrObj = {
+        name: ingredient[0].name,
+        img: `https://spoonacular.com/cdn/ingredients_250x250/${ingredient[0].image}`,
+        id: ingredient[0].id
+      }
+      speakOutput = `Added ${ingrObj.name} to the fridge`;
+      addIngredientToFridge(userId, ingrObj, "piece");
     } else {
       speakOutput = "Sorry, i did not hear you.";
     }
@@ -334,7 +317,6 @@ const AnswerIntentAlexaIdHandler = {
     );
   },
   handle(handlerInput) {
-    console.log("ALEXA ID INTENT TRIGGERED !!!!!!!!!!!!!!!!!!!");
     const slots = handlerInput.requestEnvelope.request.intent.slots;
     let passcode = slots.idAnswer.value;
     const session = handlerInput.requestEnvelope.session;
@@ -358,7 +340,6 @@ const ConfirmCodeHandler = {
     );
   },
   handle(handlerInput) {
-    console.log("ConfirmCode INTENT TRIGGERED !!!!!!!!!!!!!!!!!!!");
     const session = handlerInput.requestEnvelope.session;
     const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
     let passcode = sessionAttributes.passcode;

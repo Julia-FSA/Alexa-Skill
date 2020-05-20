@@ -36,15 +36,22 @@ const recipeFormatter = (recipe) => {
 
 const getFromSpoon = async (caseType, id, ingredients, name) => {
   // console.log('getFromSpoon() inpupts:', caseType, id, ingredients, name)
-  // if (caseType === "ingredientByName") {
-  //   axios
-  //     .get(
-  //       `https://api.spoonacular.com/food/ingredients/autocomplete?query=${name}&metaInformation=true&number=1&apiKey=${SpoonacularAPIKey}`
-  //     )
-  //     .then((ingredient) => {
-  //       console.log("ingredient is ", ingredient);
-  //     });
-  // }
+  if (caseType === 'ingredientByName') {
+    try {
+      if(name.includes(' ')){
+        name = str.replace(/\s/g, '')
+      }
+      let ingredient = await axios.get(
+        `https://api.spoonacular.com/food/ingredients/autocomplete?query=${name}&metaInformation=true&number=1&apiKey=${SpoonacularAPIKey}`)
+
+        console.log(ingredient.data)
+        return ingredient.data[0];
+
+      } catch (err) {
+        console.error(err)
+      }
+
+  }
 
   // if (caseType === "ingredientById") {
   //   axios
@@ -63,7 +70,7 @@ const getFromSpoon = async (caseType, id, ingredients, name) => {
       else ingredientStr += ingredients[i] + ",+";
     }
     let res = await axios.get(
-      `https://api.spoonacular.com/recipes/findByIngredients?ingredients=${ingredientStr}&number=5&ranking=2&ignorePantry=true&apiKey=${SpoonacularAPIKey}`
+      `https://api.spoonacular.com/recipes/findByIngredients?ingredients=${ingredientStr}&ranking=2&ignorePantry=true&number=3&apiKey=${SpoonacularAPIKey}`
     );
 
     const filteredRecipe = res.data
@@ -109,5 +116,5 @@ const getFromSpoon = async (caseType, id, ingredients, name) => {
   // }
 };
 
-module.exports = getFromSpoon;
+module.exports = { getFromSpoon } ;
 

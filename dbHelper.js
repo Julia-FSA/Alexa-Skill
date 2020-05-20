@@ -130,6 +130,9 @@ const addIngredientToFridge = async (userId, ingredient, unit) => {
       prevIngredients[ingredient].quantity++
     } else {
       prevIngredients[ingredient] = {
+        name: ingredient.name,
+        img: ingredient.img,
+        id: ingredient.img,
         quantity: 1,
         unit: unit,
       }
