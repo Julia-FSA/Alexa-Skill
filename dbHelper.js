@@ -10,6 +10,11 @@ const findOrCreateUser = async (userId) => {
     const userParams = {
       TableName: 'users',
       Key: {id: userId},
+      UpdateExpression: 'set recipes = if_not_exists(recipes, :recipes)',
+      ExpressionAttributeValues: {
+        ':recipes': [],
+      },
+
     }
 
     const stocksParams = {
@@ -30,23 +35,40 @@ const findOrCreateUser = async (userId) => {
 
 const putRecipeInDB = async (recipe, userId) => {
   try {
-    const userParams = {
+    let result = await docClient
+    .get({
       TableName: 'users',
       Key: {id: userId},
-      UpdateExpression: 'set recipes = if_not_exists(recipes, :recipes)',
-       ExpressionAttributeValues: {
-         ':recipes': recipe.id,
-       },
+    })
+    .promise()
+  let prevRecipes = result.Item.recipes
+    if (!prevRecipes.includes(recipe.id)){
+      prevRecipes.push(recipe.id)
+      const params = {
+          TableName: 'users',
+          Key: {id: userId},
+          UpdateExpression: 'set recipes = :recipes',
+          ExpressionAttributeValues: {
+            ':recipes': prevRecipes,
+          },
+        }
+        await docClient.update(params).promise()
     }
 
-    await docClient.update(userParams).promise()
 
     const params = {
       TableName: 'recipes',
       Key: {id: recipe.id},
-      UpdateExpression: 'set recipe = if_not_exists(recipe, :recipe)',
+      UpdateExpression: 'set ingredients = :ingredients, readyInMinutes = :readyInMinutes, servings = :servings, steps = :steps, title = :title, vegan = :vegan, vegetarian = :vegetarian',
        ExpressionAttributeValues: {
-         ':recipe': recipe,
+        //':id': recipe.id,
+        ':ingredients': recipe.ingredients,
+        ':readyInMinutes': recipe.readyInMinutes,
+        ':servings': recipe.servings,
+        ':steps': recipe.steps,
+        ':title': recipe.title,
+        ':vegan': recipe.vegan,
+        ':vegetarian': recipe.vegetarian,
        },
     }
     await docClient.update(params).promise()

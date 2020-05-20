@@ -54,9 +54,11 @@ const findRecipeByIngredientsHandler = {
       speakOutput = `We can't find a recipe based on what you have. Please buy more stuff.`;
     } else {
       const recipeName = spoonacular.title;
-      const ingredients = spoonacular.ingredients
-        .filter((item) => typeof item === "string")
-        .join(", ");
+      const ingredients = []
+      spoonacular.ingredients.forEach((ingr) => {
+       ingredients.push(`${ingr.amount} ${ingr.unit} ${ingr.name}`)
+      })
+
       const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
       if (recipes.length > 1) {
         reprompt = `we found a recipe for ${recipeName}. You will need the following ingredients, ${ingredients}`;
@@ -67,7 +69,7 @@ const findRecipeByIngredientsHandler = {
         readyInMinutes: recipes[0].readyInMinutes,
         servings: recipes[0].servings,
         steps: recipes[0].steps,
-        name: recipes[0].title,
+        title: recipes[0].title,
         vegan: recipes[0].vegan,
         vegetarian: recipes[0].vegetarian,
         stepIndex: 0,
@@ -78,7 +80,7 @@ const findRecipeByIngredientsHandler = {
         readyInMinutes: recipes[1].readyInMinutes,
         servings: recipes[1].servings,
         steps: recipes[1].steps,
-        name: recipes[1].title,
+        title: recipes[1].title,
         vegan: recipes[1].vegan,
         vegetarian: recipes[1].vegetarian,
         stepIndex: 0,
@@ -111,8 +113,12 @@ const nextRecipeHandler = {
     const session = handlerInput.requestEnvelope.session;
     const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
     sessionAttributes.selectedRecipe = session.attributes.backupRecipe;
+    let recipeTitle = sessionAttributes.selectedRecipe.title;
+    let ingredients = sessionAttributes.selectedRecipe.ingredients
+        .filter((item) => typeof item === "string")
+        .join(", ");
     handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
-    speakOutput = "Okay, lets go with that one instead";
+    speakOutput = `Okay, lets go with ${recipeTitle} instead, you will need ${ingredients}`;
 
     return handlerInput.responseBuilder
       .speak(speakOutput)

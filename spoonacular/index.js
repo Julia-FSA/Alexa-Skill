@@ -17,38 +17,44 @@ const recipeFormatter = (recipe) => {
     vegetarian: recipe.vegetarian,
   };
   recipe.analyzedInstructions[0].steps.forEach((step) => {
-    rec.steps.push(`Step ${step.number}: ${step.step}  `);
-    step.ingredients.forEach((ingredient) => {
-      if (!rec.ingredients.includes(ingredient.id)) {
-        rec.ingredients.push(ingredient.id, `${ingredient.name}`);
-      }
-    });
+    let res = step.step.replace(/\.(?=[^\s])/g, ". ")
+    rec.steps.push(`Step ${step.number}: ${res} `);
   });
+  recipe.extendedIngredients.forEach((ingr) => {
+    let ingrObj = {
+      id: ingr.id,
+      name: ingr.name,
+      amount: ingr.measures.us.amount,
+      unit: ingr.measures.us.unitLong,
+      img: ingr.image,
+    }
+    rec.ingredients.push(ingrObj);
+  })
 
   return rec;
 };
 
 const getFromSpoon = async (caseType, id, ingredients, name) => {
   // console.log('getFromSpoon() inpupts:', caseType, id, ingredients, name)
-  if (caseType === "ingredientByName") {
-    axios
-      .get(
-        `https://api.spoonacular.com/food/ingredients/autocomplete?query=${name}&metaInformation=true&number=1&apiKey=${SpoonacularAPIKey}`
-      )
-      .then((ingredient) => {
-        console.log("ingredient is ", ingredient);
-      });
-  }
+  // if (caseType === "ingredientByName") {
+  //   axios
+  //     .get(
+  //       `https://api.spoonacular.com/food/ingredients/autocomplete?query=${name}&metaInformation=true&number=1&apiKey=${SpoonacularAPIKey}`
+  //     )
+  //     .then((ingredient) => {
+  //       console.log("ingredient is ", ingredient);
+  //     });
+  // }
 
-  if (caseType === "ingredientById") {
-    axios
-      .get(
-        `https://api.spoonacular.com/food/ingredients/${id}/information?amount=1&apiKey=${SpoonacularAPIKey}`
-      )
-      .then((ingredient) => {
-        console.log("ingredient is ", ingredient.data);
-      });
-  }
+  // if (caseType === "ingredientById") {
+  //   axios
+  //     .get(
+  //       `https://api.spoonacular.com/food/ingredients/${id}/information?amount=1&apiKey=${SpoonacularAPIKey}`
+  //     )
+  //     .then((ingredient) => {
+  //       console.log("ingredient is ", ingredient.data);
+  //     });
+  // }
 
   if (caseType === "findByIngredients") {
     let ingredientStr = "";
@@ -79,8 +85,8 @@ const getFromSpoon = async (caseType, id, ingredients, name) => {
       const response = await axios.get(
         `https://api.spoonacular.com/recipes/${filteredRecipe[i].id}/information?includeNutrition=false&amount=1&apiKey=${SpoonacularAPIKey}`
       );
-
-      if (response.data.analyzedInstructions.length) {
+        console.log(response.data)
+      if (response.data.analyzedInstructions.length && response.data.extendedIngredients.length) {
         if (!goodRecipe.id) {
           goodRecipe = recipeFormatter(response.data);
         } else {
@@ -92,15 +98,15 @@ const getFromSpoon = async (caseType, id, ingredients, name) => {
     return [goodRecipe, backupRecipe];
   }
 
-  if (caseType === "recipeById") {
-    axios
-      .get(
-        `https://api.spoonacular.com/recipes/${id}/information?includeNutrition=false&amount=1&apiKey=${SpoonacularAPIKey}`
-      )
-      .then((recipe) => {
-        console.log("recipe is ", recipe.data);
-      });
-  }
+  // if (caseType === "recipeById") {
+  //   axios
+  //     .get(
+  //       `https://api.spoonacular.com/recipes/${id}/information?includeNutrition=false&amount=1&apiKey=${SpoonacularAPIKey}`
+  //     )
+  //     .then((recipe) => {
+  //       console.log("recipe is ", recipe.data);
+  //     });
+  // }
 };
 
 module.exports = getFromSpoon;
