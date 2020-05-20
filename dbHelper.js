@@ -10,6 +10,11 @@ const findOrCreateUser = async (userId) => {
     const userParams = {
       TableName: 'users',
       Key: {id: userId},
+      UpdateExpression: 'set recipes = if_not_exists(recipes, :recipes)',
+      ExpressionAttributeValues: {
+        ':recipes': [],
+      },
+
     }
 
     const stocksParams = {
@@ -23,6 +28,50 @@ const findOrCreateUser = async (userId) => {
 
     await docClient.update(userParams).promise()
     await docClient.update(stocksParams).promise()
+  } catch (err) {
+    console.log(err)
+  }
+}
+
+const putRecipeInDB = async (recipe, userId) => {
+  try {
+    let result = await docClient
+    .get({
+      TableName: 'users',
+      Key: {id: userId},
+    })
+    .promise()
+  let prevRecipes = result.Item.recipes
+    if (!prevRecipes.includes(recipe.id)){
+      prevRecipes.push(recipe.id)
+      const params = {
+          TableName: 'users',
+          Key: {id: userId},
+          UpdateExpression: 'set recipes = :recipes',
+          ExpressionAttributeValues: {
+            ':recipes': prevRecipes,
+          },
+        }
+        await docClient.update(params).promise()
+    }
+
+
+    const params = {
+      TableName: 'recipes',
+      Key: {id: recipe.id},
+      UpdateExpression: 'set ingredients = :ingredients, readyInMinutes = :readyInMinutes, servings = :servings, steps = :steps, title = :title, vegan = :vegan, vegetarian = :vegetarian',
+       ExpressionAttributeValues: {
+        //':id': recipe.id,
+        ':ingredients': recipe.ingredients,
+        ':readyInMinutes': recipe.readyInMinutes,
+        ':servings': recipe.servings,
+        ':steps': recipe.steps,
+        ':title': recipe.title,
+        ':vegan': recipe.vegan,
+        ':vegetarian': recipe.vegetarian,
+       },
+    }
+    await docClient.update(params).promise()
   } catch (err) {
     console.log(err)
   }
@@ -257,6 +306,7 @@ const clearFridge = async (userId) => {
 module.exports = {
   clearFridge,
   addIngredientToFridge,
+  putRecipeInDB,
   getFridgeById,
   getRecipeById,
   getRecipeByTitle,
