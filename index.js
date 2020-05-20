@@ -114,9 +114,12 @@ const nextRecipeHandler = {
     const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
     sessionAttributes.selectedRecipe = session.attributes.backupRecipe;
     let recipeTitle = sessionAttributes.selectedRecipe.title;
-    let ingredients = sessionAttributes.selectedRecipe.ingredients
-        .filter((item) => typeof item === "string")
-        .join(", ");
+
+    const ingredients = []
+    sessionAttributes.selectedRecipe.ingredients.forEach((ingr) => {
+     ingredients.push(`${ingr.amount} ${ingr.unit} ${ingr.name}`)
+    })
+
     handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
     speakOutput = `Okay, lets go with ${recipeTitle} instead, you will need ${ingredients}`;
 
