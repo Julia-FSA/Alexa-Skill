@@ -155,7 +155,12 @@ const nextStepHandler = {
       selectedRecipe.steps[selectedRecipe.stepIndex - 1]
     }${statement}`;
     sessionAttributes.lastResponse = speakOutput;
-
+    
+    if (!selectedRecipe.steps[selectedRecipe.stepIndex]){
+    sessionAttributes.selectedRecipe.ingredients.forEach((ingr) => {
+      removeIngredientFromFridge(ingr.name, userId)
+    })
+  }
     handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
 
     return handlerInput.responseBuilder
