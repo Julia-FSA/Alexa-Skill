@@ -274,7 +274,7 @@ const AnswerIntentAlexaIdHandler = {
     const session = handlerInput.requestEnvelope.session
     const sessionAttributes = handlerInput.attributesManager.getSessionAttributes()
     sessionAttributes.passcode = passcode
-    const speechText = `Your  passcode is: ${passcode}, please say confirm code now.`
+    const speechText = `Your  passcode is: ${passcode}, please log out of the Julia Cooks website now. When logged out, please say confirm code.`
 
     return handlerInput.responseBuilder
       .speak(speechText)
@@ -302,7 +302,10 @@ const ConfirmCodeHandler = {
     const speechText =
       'Your online account has been successfully linked to your Alexa account. Thank you for using Julia Cooks.'
 
-    return handlerInput.responseBuilder.speak(speechText).getResponse()
+    return handlerInput.responseBuilder
+      .speak(speechText)
+      .reprompt(speechText)
+      .getResponse()
   },
 }
 

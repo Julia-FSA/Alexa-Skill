@@ -181,10 +181,10 @@ const copyUserData = async (alexaId, userData, passcode) => {
       id: alexaId,
     },
     UpdateExpression:
-      'set first_name = :f, last_name=:l, password=:p, salt=:s, email=:e',
+      'set firstName = :f, lastName=:l, password=:p, salt=:s, email=:e',
     ExpressionAttributeValues: {
-      ':f': userData.first_name,
-      ':l': userData.last_name,
+      ':f': userData.firstName,
+      ':l': userData.lastName,
       ':p': userData.password,
       ':s': userData.salt,
       ':e': userData.email,
