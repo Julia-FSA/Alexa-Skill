@@ -6,7 +6,9 @@ const { SpoonacularAPIKey } = require("../secrets.js");
 // let ingredientArr = [];
 const recipeFormatter = (recipe) => {
   // console.log('formatter', recipe);
-  let rec = {
+  let rec
+  if(recipe !== undefined){
+     rec = {
     id: recipe.id,
     ingredients: [],
     readyInMinutes: recipe.readyInMinutes,
@@ -33,6 +35,8 @@ const recipeFormatter = (recipe) => {
   })
 
   return rec;
+  }
+  return rec;
 };
 
 const getFromSpoon = async (caseType, id, ingredients, name) => {
@@ -45,7 +49,6 @@ const getFromSpoon = async (caseType, id, ingredients, name) => {
       let ingredient = await axios.get(
         `https://api.spoonacular.com/food/ingredients/autocomplete?query=${name}&metaInformation=true&number=1&apiKey=${SpoonacularAPIKey}`)
 
-        console.log(ingredient.data)
         return ingredient.data[0];
 
       } catch (err) {
@@ -74,6 +77,9 @@ const getFromSpoon = async (caseType, id, ingredients, name) => {
       `https://api.spoonacular.com/recipes/findByIngredients?ingredients=${ingredientStr}&ranking=2&ignorePantry=true&number=4&apiKey=${SpoonacularAPIKey}`
     );
     console.log("res", res.data)
+    if (!res.data.length){
+      return;
+    }
 
     const filteredRecipe = res.data
       .filter((recipe) => {

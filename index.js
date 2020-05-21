@@ -48,13 +48,13 @@ const findRecipeByIngredientsHandler = {
     const session = handlerInput.requestEnvelope.session;
     let userId = session.user.userId.slice(18);
     let recipes = await getRecipe(userId);
-    let spoonacular = recipes[0];
     let speakOutput = "";
     let reprompt = "";
-    if (!spoonacular) {
+    if (recipes === undefined) {
       speakOutput = `We can't find a recipe based on what you have. Please either add more ingredients or remove the more random ingredients you have.`;
-    }
-
+      reprompt = 'ask for help if you are confused, you can also clear your fridge and start again if you would like';
+    } else {
+    let spoonacular = recipes[0];
       const recipeName = spoonacular.title;
       const ingredients = []
       spoonacular.ingredients.forEach((ingr) => {
@@ -100,7 +100,7 @@ const findRecipeByIngredientsHandler = {
       sessionAttributes.selectedRecipe = selectedRecipe;
       sessionAttributes.backupRecipe = backupRecipe;
       handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
-
+      }
     return handlerInput.responseBuilder
       .speak(speakOutput)
       .reprompt(reprompt)
@@ -334,7 +334,7 @@ const AnswerIntentAlexaIdHandler = {
     const sessionAttributes = handlerInput.attributesManager.getSessionAttributes()
     sessionAttributes.passcode = passcode
     const speechText = `Your  passcode is: ${passcode}, please log out of the Julia Cooks website now. When logged out, please say confirm code.`
-    
+
 
     return handlerInput.responseBuilder
       .speak(speechText)
