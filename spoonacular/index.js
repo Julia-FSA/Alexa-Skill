@@ -15,6 +15,7 @@ const recipeFormatter = (recipe) => {
     title: recipe.title,
     vegan: recipe.vegan,
     vegetarian: recipe.vegetarian,
+    likes: recipe.aggregateLikes,
   };
   recipe.analyzedInstructions[0].steps.forEach((step) => {
     let res = step.step.replace(/\.(?=[^\s])/g, ". ")
@@ -36,15 +37,22 @@ const recipeFormatter = (recipe) => {
 
 const getFromSpoon = async (caseType, id, ingredients, name) => {
   // console.log('getFromSpoon() inpupts:', caseType, id, ingredients, name)
-  // if (caseType === "ingredientByName") {
-  //   axios
-  //     .get(
-  //       `https://api.spoonacular.com/food/ingredients/autocomplete?query=${name}&metaInformation=true&number=1&apiKey=${SpoonacularAPIKey}`
-  //     )
-  //     .then((ingredient) => {
-  //       console.log("ingredient is ", ingredient);
-  //     });
-  // }
+  if (caseType === 'ingredientByName') {
+    try {
+      if(name.includes(' ')){
+        name = name.replace(/\s/g, '')
+      }
+      let ingredient = await axios.get(
+        `https://api.spoonacular.com/food/ingredients/autocomplete?query=${name}&metaInformation=true&number=1&apiKey=${SpoonacularAPIKey}`)
+
+        console.log(ingredient.data)
+        return ingredient.data[0];
+
+      } catch (err) {
+        console.error(err)
+      }
+
+  }
 
   // if (caseType === "ingredientById") {
   //   axios
@@ -63,8 +71,9 @@ const getFromSpoon = async (caseType, id, ingredients, name) => {
       else ingredientStr += ingredients[i] + ",+";
     }
     let res = await axios.get(
-      `https://api.spoonacular.com/recipes/findByIngredients?ingredients=${ingredientStr}&number=5&ranking=2&ignorePantry=true&apiKey=${SpoonacularAPIKey}`
+      `https://api.spoonacular.com/recipes/findByIngredients?ingredients=${ingredientStr}&ranking=2&ignorePantry=true&number=4&apiKey=${SpoonacularAPIKey}`
     );
+    console.log("res", res.data)
 
     const filteredRecipe = res.data
       .filter((recipe) => {
@@ -83,14 +92,16 @@ const getFromSpoon = async (caseType, id, ingredients, name) => {
         break;
       }
       const response = await axios.get(
-        `https://api.spoonacular.com/recipes/${filteredRecipe[i].id}/information?includeNutrition=false&amount=1&apiKey=${SpoonacularAPIKey}`
+        `https://api.spoonacular.com/recipes/${filteredRecipe[i].id}/information?instructionsRequired=true&includeNutrition=false&amount=1&apiKey=${SpoonacularAPIKey}`
       );
-        console.log(response.data)
-      if (response.data.analyzedInstructions.length && response.data.extendedIngredients.length) {
+        console.log("response.data from second call", response.data)
+      if (response.data.analyzedInstructions.length && response.data.extendedIngredients.length > 0) {
         if (!goodRecipe.id) {
           goodRecipe = recipeFormatter(response.data);
+          console.log("good recipe", goodRecipe)
         } else {
-          backupRecipe = recipeFormatter(response.data);
+          backupRecipe = await recipeFormatter(response.data);
+          console.log("backupRecipe", backupRecipe)
         }
       }
     }
@@ -109,5 +120,5 @@ const getFromSpoon = async (caseType, id, ingredients, name) => {
   // }
 };
 
-module.exports = getFromSpoon;
+module.exports = { getFromSpoon } ;
 

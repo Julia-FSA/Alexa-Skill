@@ -1,5 +1,5 @@
 const AWS = require('aws-sdk')
-const getFromSpoon = require('./spoonacular')
+const { getFromSpoon } = require('./spoonacular')
 // const { v4: uuidv4 } = require("uuid");
 
 AWS.config.update({region: 'us-east-2'})
@@ -59,7 +59,7 @@ const putRecipeInDB = async (recipe, userId) => {
     const params = {
       TableName: 'recipes',
       Key: {id: recipe.id},
-      UpdateExpression: 'set ingredients = :ingredients, readyInMinutes = :readyInMinutes, servings = :servings, steps = :steps, title = :title, vegan = :vegan, vegetarian = :vegetarian',
+      UpdateExpression: 'set ingredients = :ingredients, readyInMinutes = :readyInMinutes, servings = :servings, steps = :steps, title = :title, vegan = :vegan, vegetarian = :vegetarian, likes = :likes',
        ExpressionAttributeValues: {
         //':id': recipe.id,
         ':ingredients': recipe.ingredients,
@@ -69,6 +69,7 @@ const putRecipeInDB = async (recipe, userId) => {
         ':title': recipe.title,
         ':vegan': recipe.vegan,
         ':vegetarian': recipe.vegetarian,
+        ':likes': recipe.likes,
        },
     }
     await docClient.update(params).promise()
@@ -119,6 +120,7 @@ const getRecipeByTitle = async (recipeTitle) => {
 
 const addIngredientToFridge = async (userId, ingredient, unit) => {
   try {
+    console.log("**!*!**!*!*!*!*!!**!**!*!*!*!",ingredient)
     let result = await docClient
       .get({
         TableName: 'stocks',
@@ -126,10 +128,13 @@ const addIngredientToFridge = async (userId, ingredient, unit) => {
       })
       .promise()
     let prevIngredients = result.Item.ingredients
-    if (prevIngredients[ingredient]) {
+    if (prevIngredients[ingredient.name]) {
       prevIngredients[ingredient].quantity++
     } else {
-      prevIngredients[ingredient] = {
+      prevIngredients[ingredient.name] = {
+
+        img: ingredient.img,
+        id: ingredient.id,
         quantity: 1,
         unit: unit,
       }
@@ -190,12 +195,13 @@ const getRecipe = async (userId) => {
     console.log('getStock succeeded! You have:', ingredientsArray)
 
     // step 2. ping Spoonacular API
-    return getFromSpoon('findByIngredients', 0, ingredientsArray, null)
+    let spoonCall = await getFromSpoon('findByIngredients', 0, ingredientsArray, null)
+    console.log("spooncall",spoonCall)
+    return spoonCall
   } catch (err) {
     console.error(
       'Unable to read stock. Error JSON:',
-      JSON.stringify(err, null, 2)
-    )
+      err)
   }
 }
 

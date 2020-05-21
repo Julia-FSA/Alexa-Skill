@@ -2,6 +2,7 @@
 // Please visit https://alexa.design/cookbook for additional examples on implementing slots, dialog management,
 // session persistence, api calls, and more.
 const Alexa = require("ask-sdk-core");
+const { getFromSpoon } = require('./spoonacular/index')
 const {
   clearFridge,
   addIngredientToFridge,
@@ -51,8 +52,9 @@ const findRecipeByIngredientsHandler = {
     let speakOutput = "";
     let reprompt = "";
     if (!spoonacular) {
-      speakOutput = `We can't find a recipe based on what you have. Please buy more stuff.`;
-    } else {
+      speakOutput = `We can't find a recipe based on what you have. Please either add more ingredients or remove the more random ingredients you have.`;
+    }
+
       const recipeName = spoonacular.title;
       const ingredients = []
       spoonacular.ingredients.forEach((ingr) => {
@@ -60,9 +62,9 @@ const findRecipeByIngredientsHandler = {
       })
 
       const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
-      if (recipes.length > 1) {
-        reprompt = `we found a recipe for ${recipeName}. You will need the following ingredients, ${ingredients}`;
-      }
+      // if (recipes.length > 0) {
+      //   reprompt = `we found a recipe for ${recipeName}. You will need the following ingredients, ${ingredients}`;
+      // }
       const selectedRecipe = {
         id: recipes[0].id,
         ingredients: recipes[0].ingredients,
@@ -72,6 +74,7 @@ const findRecipeByIngredientsHandler = {
         title: recipes[0].title,
         vegan: recipes[0].vegan,
         vegetarian: recipes[0].vegetarian,
+        likes: recipes[0].likes,
         stepIndex: 0,
       };
       const backupRecipe = {
@@ -83,20 +86,24 @@ const findRecipeByIngredientsHandler = {
         title: recipes[1].title,
         vegan: recipes[1].vegan,
         vegetarian: recipes[1].vegetarian,
+        likes: recipes[1].likes,
         stepIndex: 0,
       };
+
+      if(backupRecipe.id === undefined){
+        reprompt = 'this is the only recipe we could find if you would like another one, please try again with some changes to the fridge'
+      } else {
+        reprompt =  `is this recipe okay? I also have ${recipes[1].title},  if you would prefer this one instead please say next recipe`
+      }
+        speakOutput = `we found a recipe for ${recipeName}. You will need the following ingredients, ${ingredients},     ask what is the first step to begin`;
 
       sessionAttributes.selectedRecipe = selectedRecipe;
       sessionAttributes.backupRecipe = backupRecipe;
       handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
-      speakOutput = `we found a recipe for ${recipeName}. You will need the following ingredients, ${ingredients}`;
-    }
 
     return handlerInput.responseBuilder
       .speak(speakOutput)
-      .reprompt(
-        `is this recipe okay? I also have ${recipes[1].title},  if you would prefer this one instead please say next recipe`
-      )
+      .reprompt(reprompt)
       .getResponse();
   },
 };
@@ -109,10 +116,11 @@ const nextRecipeHandler = {
     );
   },
   handle(handlerInput) {
+    try {
     let speakOutput = "";
     const session = handlerInput.requestEnvelope.session;
     const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
-    sessionAttributes.selectedRecipe = session.attributes.backupRecipe;
+    sessionAttributes.selectedRecipe = sessionAttributes.backupRecipe;
     let recipeTitle = sessionAttributes.selectedRecipe.title;
 
     const ingredients = []
@@ -121,12 +129,15 @@ const nextRecipeHandler = {
     })
 
     handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
-    speakOutput = `Okay, lets go with ${recipeTitle} instead, you will need ${ingredients}`;
+    speakOutput = `Okay, lets go with ${recipeTitle} instead, you will need ${ingredients},   ask for the first step to begin`;
 
     return handlerInput.responseBuilder
       .speak(speakOutput)
       .reprompt(generalReprompt)
       .getResponse();
+  } catch(err){
+    console.error(err)
+  }
   },
 };
 
@@ -150,12 +161,12 @@ const nextStepHandler = {
 
     const statement = selectedRecipe.steps[selectedRecipe.stepIndex]
       ? ""
-      : ` Congratulations, you're all done!`;
+      : `,   Congratulations, you're all done!`;
     const speakOutput = `${
       selectedRecipe.steps[selectedRecipe.stepIndex - 1]
     }${statement}`;
     sessionAttributes.lastResponse = speakOutput;
-    
+
     if (!selectedRecipe.steps[selectedRecipe.stepIndex]){
     sessionAttributes.selectedRecipe.ingredients.forEach((ingr) => {
       removeIngredientFromFridge(ingr.name, userId)
@@ -169,31 +180,7 @@ const nextStepHandler = {
       .getResponse();
   },
 };
-
-// const getRecipeHandler = {
-//   canHandle(handlerInput) {
-//     return (
-//       Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' &&
-//       Alexa.getIntentName(handlerInput.requestEnvelope) === 'getRecipe'
-//     )
-//   },
-//   handle(handlerInput) {
-//     const request = handlerInput.requestEnvelope.request
-//     let speakOutput = ''
-//     let slotValues = getSlotValues(request.intent.slots)
-//     if (slotValues && slotValues.food) {
-//       speakOutput = `Added ${slotValues.food.heardAs} to the fridge`
-//       fridge.push(slotValues.food.heardAs)
-//       addIngredientToFridge(slotValues.food.heardAs, 'each')
-//     } else {
-//       speakOutput = 'Sorry, i did not hear you.'
-//     }
-//     return handlerInput.responseBuilder
-//       .speak(speakOutput)
-//       .reprompt(generalPrompt)
-//       .getResponse()
-//   },
-// }
+//************************************************!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! */
 
 const addToFridgeHandler = {
   canHandle(handlerInput) {
@@ -202,7 +189,7 @@ const addToFridgeHandler = {
       Alexa.getIntentName(handlerInput.requestEnvelope) === "addToFridge"
     );
   },
-  handle(handlerInput) {
+  async handle(handlerInput) {
     const session = handlerInput.requestEnvelope.session;
     let userId = session.user.userId.slice(18);
     const request = handlerInput.requestEnvelope.request;
@@ -214,8 +201,14 @@ const addToFridgeHandler = {
     ) {
       speakOutput = "sorry I did not understand that";
     } else if (slotValues && slotValues.food) {
-      speakOutput = `Added ${slotValues.food.heardAs} to the fridge`;
-      addIngredientToFridge(userId, slotValues.food.heardAs, "each");
+     let ingredient =  await getFromSpoon('ingredientByName', null, null,  slotValues.food.heardAs)
+      let ingrObj = {
+        name: ingredient.name,
+        img: `https://spoonacular.com/cdn/ingredients_250x250/${ingredient.image}`,
+        id: ingredient.id
+      }
+      speakOutput = `Added ${ingrObj.name} to the fridge`;
+      addIngredientToFridge(userId, ingrObj, "piece");
     } else {
       speakOutput = "Sorry, i did not hear you.";
     }
@@ -286,6 +279,7 @@ const getFridgeHandler = {
     const session = handlerInput.requestEnvelope.session;
     let userId = session.user.userId.slice(18);
     const fridge = await getFridgeById(userId);
+    console.log(fridge)
     let speakOutput = "";
     let fridgeIng = Object.keys(fridge).join(", ");
     if (fridgeIng.length > 0) {
@@ -334,13 +328,13 @@ const AnswerIntentAlexaIdHandler = {
     );
   },
   handle(handlerInput) {
-    console.log('ALEXA ID INTENT TRIGGERED !!!!!!!!!!!!!!!!!!!')
     const slots = handlerInput.requestEnvelope.request.intent.slots
     let passcode = slots.idAnswer.value
     const session = handlerInput.requestEnvelope.session
     const sessionAttributes = handlerInput.attributesManager.getSessionAttributes()
     sessionAttributes.passcode = passcode
     const speechText = `Your  passcode is: ${passcode}, please log out of the Julia Cooks website now. When logged out, please say confirm code.`
+    
 
     return handlerInput.responseBuilder
       .speak(speechText)
@@ -358,7 +352,6 @@ const ConfirmCodeHandler = {
     );
   },
   handle(handlerInput) {
-    console.log("ConfirmCode INTENT TRIGGERED !!!!!!!!!!!!!!!!!!!");
     const session = handlerInput.requestEnvelope.session;
     const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
     let passcode = sessionAttributes.passcode;
