@@ -53,7 +53,8 @@ const findRecipeByIngredientsHandler = {
     let reprompt = "";
     if (!spoonacular) {
       speakOutput = `We can't find a recipe based on what you have. Please either add more ingredients or remove the more random ingredients you have.`;
-    } else {
+    }
+
       const recipeName = spoonacular.title;
       const ingredients = []
       spoonacular.ingredients.forEach((ingr) => {
@@ -61,9 +62,9 @@ const findRecipeByIngredientsHandler = {
       })
 
       const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
-      if (recipes.length > 1) {
-        reprompt = `we found a recipe for ${recipeName}. You will need the following ingredients, ${ingredients}`;
-      }
+      // if (recipes.length > 0) {
+      //   reprompt = `we found a recipe for ${recipeName}. You will need the following ingredients, ${ingredients}`;
+      // }
       const selectedRecipe = {
         id: recipes[0].id,
         ingredients: recipes[0].ingredients,
@@ -87,17 +88,20 @@ const findRecipeByIngredientsHandler = {
         stepIndex: 0,
       };
 
+      if(backupRecipe.id === undefined){
+        reprompt = 'this is the only recipe we could find if you would like another one, please try again with some changes to the fridge'
+      } else {
+        reprompt =  `is this recipe okay? I also have ${recipes[1].title},  if you would prefer this one instead please say next recipe`
+      }
+        speakOutput = `we found a recipe for ${recipeName}. You will need the following ingredients, ${ingredients},     ask what is the first step to begin`;
+
       sessionAttributes.selectedRecipe = selectedRecipe;
       sessionAttributes.backupRecipe = backupRecipe;
       handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
-      speakOutput = `we found a recipe for ${recipeName}. You will need the following ingredients, ${ingredients},  ask what is the first step to begin`;
-    }
 
     return handlerInput.responseBuilder
       .speak(speakOutput)
-      .reprompt(
-        `is this recipe okay? I also have ${recipes[1].title},  if you would prefer this one instead please say next recipe`
-      )
+      .reprompt(reprompt)
       .getResponse();
   },
 };
@@ -110,10 +114,11 @@ const nextRecipeHandler = {
     );
   },
   handle(handlerInput) {
+    try {
     let speakOutput = "";
     const session = handlerInput.requestEnvelope.session;
     const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
-    sessionAttributes.selectedRecipe = session.attributes.backupRecipe;
+    sessionAttributes.selectedRecipe = sessionAttributes.backupRecipe;
     let recipeTitle = sessionAttributes.selectedRecipe.title;
 
     const ingredients = []
@@ -122,12 +127,15 @@ const nextRecipeHandler = {
     })
 
     handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
-    speakOutput = `Okay, lets go with ${recipeTitle} instead, you will need ${ingredients}, ask for the first step to begin`;
+    speakOutput = `Okay, lets go with ${recipeTitle} instead, you will need ${ingredients},   ask for the first step to begin`;
 
     return handlerInput.responseBuilder
       .speak(speakOutput)
       .reprompt(generalReprompt)
       .getResponse();
+  } catch(err){
+    console.error(err)
+  }
   },
 };
 
@@ -151,7 +159,7 @@ const nextStepHandler = {
 
     const statement = selectedRecipe.steps[selectedRecipe.stepIndex]
       ? ""
-      : ` Congratulations, you're all done!`;
+      : `,   Congratulations, you're all done!`;
     const speakOutput = `${
       selectedRecipe.steps[selectedRecipe.stepIndex - 1]
     }${statement}`;
@@ -193,9 +201,9 @@ const addToFridgeHandler = {
     } else if (slotValues && slotValues.food) {
      let ingredient =  await getFromSpoon('ingredientByName', null, null,  slotValues.food.heardAs)
       let ingrObj = {
-        name: ingredient[0].name,
-        img: `https://spoonacular.com/cdn/ingredients_250x250/${ingredient[0].image}`,
-        id: ingredient[0].id
+        name: ingredient.name,
+        img: `https://spoonacular.com/cdn/ingredients_250x250/${ingredient.image}`,
+        id: ingredient.id
       }
       speakOutput = `Added ${ingrObj.name} to the fridge`;
       addIngredientToFridge(userId, ingrObj, "piece");
@@ -269,6 +277,7 @@ const getFridgeHandler = {
     const session = handlerInput.requestEnvelope.session;
     let userId = session.user.userId.slice(18);
     const fridge = await getFridgeById(userId);
+    console.log(fridge)
     let speakOutput = "";
     let fridgeIng = Object.keys(fridge).join(", ");
     if (fridgeIng.length > 0) {
