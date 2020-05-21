@@ -69,7 +69,7 @@ const putRecipeInDB = async (recipe, userId) => {
         ':title': recipe.title,
         ':vegan': recipe.vegan,
         ':vegetarian': recipe.vegetarian,
-        ':likes': recipe.likes
+        ':likes': recipe.likes,
        },
     }
     await docClient.update(params).promise()

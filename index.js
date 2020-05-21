@@ -74,6 +74,7 @@ const findRecipeByIngredientsHandler = {
         title: recipes[0].title,
         vegan: recipes[0].vegan,
         vegetarian: recipes[0].vegetarian,
+        likes: recipes[0].likes,
         stepIndex: 0,
       };
       const backupRecipe = {
@@ -85,6 +86,7 @@ const findRecipeByIngredientsHandler = {
         title: recipes[1].title,
         vegan: recipes[1].vegan,
         vegetarian: recipes[1].vegetarian,
+        likes: recipes[1].likes,
         stepIndex: 0,
       };
 
