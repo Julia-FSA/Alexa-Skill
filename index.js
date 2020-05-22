@@ -6,6 +6,7 @@ const { getFromSpoon } = require('./spoonacular/index')
 const {
   clearFridge,
   addIngredientToFridge,
+  getSelectedRecipe,
   getRecipeById,
   getFridgeById,
   putRecipeInDB,
@@ -106,6 +107,68 @@ const findRecipeByIngredientsHandler = {
   },
 };
 
+const selectedRecipeHandler = {
+  canHandle(handlerInput) {
+    return (
+      Alexa.getRequestType(handlerInput.requestEnvelope) === "IntentRequest" &&
+      Alexa.getIntentName(handlerInput.requestEnvelope) === "selectedRecipe"
+    );
+  },
+  async handle (handlerInput) {
+    try {
+    let speakOutput = ``;
+    const session = handlerInput.requestEnvelope.session;
+    const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+    let userId = session.user.userId.slice(18);
+    console.log('userId', userId)
+    let recipe = await getSelectedRecipe(userId)
+      console.log('$$$$$$$$$',recipe)
+      const selectedRecipe = {
+        id: recipe.id,
+        ingredients: recipe.ingredients,
+        readyInMinutes: recipe.readyInMinutes,
+        servings: recipe.servings,
+        steps: recipe.steps,
+        title: recipe.title,
+        vegan: recipe.vegan,
+        vegetarian: recipe.vegetarian,
+        likes: recipe.likes,
+        stepIndex: 0,
+      };
+
+    // if (selectedRecipe.id === undefined){
+    //   speakOutput = 'Sorry we dont have a recipe saved for you at this time'
+    //   return handlerInput.responseBuilder
+    //   .speak(speakOutput)
+    //   .reprompt(generalReprompt)
+    //   .getResponse();
+    // }
+
+        let recipeTitle = selectedRecipe.title;
+        let ingredients = []
+        for (let i = 0; i < selectedRecipe.ingredients.length; i++) {
+          let ingr = selectedRecipe.ingredients[i]
+         await ingredients.push(` ${ingr.amount} ${ingr.unit} ${ingr.name} ,`)
+        }
+      speakOutput = `Okay, lets go with ${recipeTitle} instead, you will need ${ingredients},   ask for the first step to begin`;
+      //speakOutput = `Okay, lets go with ${recipeTitle}, ask for the first step to begin`;
+
+      sessionAttributes.selectedRecipe = selectedRecipe;
+      handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
+
+    return handlerInput.responseBuilder
+      .speak(speakOutput)
+      .reprompt(generalReprompt)
+      .getResponse();
+  } catch (err){
+    console.error(err)
+  }
+  },
+};
+
+
+
+
 const nextRecipeHandler = {
   canHandle(handlerInput) {
     return (
@@ -113,7 +176,7 @@ const nextRecipeHandler = {
       Alexa.getIntentName(handlerInput.requestEnvelope) === "nextRecipe"
     );
   },
-  handle (handlerInput) {
+  async handle (handlerInput) {
     try {
     let speakOutput = ``;
     const session = handlerInput.requestEnvelope.session;
@@ -126,10 +189,15 @@ const nextRecipeHandler = {
       .reprompt(generalReprompt)
       .getResponse();
     }
-    let recipe = session.attributes.backupRecipe
+    let recipe = session.attributes.backupRecipe;
+    let ingredients = []
+      for (let i = 0; i < recipe.ingredients.length; i++) {
+        let ingr = recipe.ingredients[i]
+       await ingredients.push(` ${ingr.amount} ${ingr.unit} ${ingr.name} ,`)
+      }
         let recipeTitle = recipe.title;
-      //speakOutput = `Okay, lets go with ${recipeTitle} instead, you will need ${ingredients},   ask for the first step to begin`;
-      speakOutput = `Okay, lets go with ${recipeTitle} instead, ask for the first step to begin`;
+      speakOutput = `Okay, lets go with ${recipeTitle} instead, you will need ${ingredients},   ask for the first step to begin`;
+      //speakOutput = `Okay, lets go with ${recipeTitle} instead, ask for the first step to begin`;
 
       sessionAttributes.selectedRecipe = session.attributes.backupRecipe;
       handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
@@ -548,6 +616,7 @@ exports.handler = Alexa.SkillBuilders.custom()
     nextRecipeHandler,
     clearFridgeHandler,
     LaunchRequestHandler,
+    selectedRecipeHandler,
     addToFridgeHandler,
     removeFromFridgeHandler,
     getFridgeHandler,
