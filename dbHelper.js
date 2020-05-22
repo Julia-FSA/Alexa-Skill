@@ -59,11 +59,11 @@ const putRecipeInDB = async (recipe, userId) => {
     const params = {
       TableName: 'recipes',
       Key: {id: recipe.id},
-      UpdateExpression: 'set ingredients = :ingredients, readyInMinutes = :readyInMinutes, servings = :servings, steps = :steps, title = :title, vegan = :vegan, vegetarian = :vegetarian, likes = :likes',
+      UpdateExpression: 'set ingredients = :ingredients, readyInMinutes = :readyInMinutes, image = :image, servings = :servings, steps = :steps, title = :title, vegan = :vegan, vegetarian = :vegetarian, likes = :likes',
        ExpressionAttributeValues: {
-        //':id': recipe.id,
         ':ingredients': recipe.ingredients,
         ':readyInMinutes': recipe.readyInMinutes,
+        ':image': recipe.image,
         ':servings': recipe.servings,
         ':steps': recipe.steps,
         ':title': recipe.title,
@@ -132,7 +132,7 @@ const addIngredientToFridge = async (userId, ingredient, unit) => {
     } else {
       prevIngredients[ingredient.name] = {
 
-        img: ingredient.img,
+        image: ingredient.image,
         id: ingredient.id,
         quantity: 1,
         unit: unit,

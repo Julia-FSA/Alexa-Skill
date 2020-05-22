@@ -5,11 +5,12 @@ const { SpoonacularAPIKey } = require("../secrets.js");
 //let recipe = {};
 // let ingredientArr = [];
 const recipeFormatter = (recipe) => {
-  // console.log('formatter', recipe);
+   console.log('formatter', recipe);
   let rec
   if (recipe !== undefined){
      rec = {
     id: recipe.id,
+    image: recipe.image,
     ingredients: [],
     readyInMinutes: recipe.readyInMinutes,
     servings: recipe.servings,
@@ -29,7 +30,7 @@ const recipeFormatter = (recipe) => {
       name: ingr.name,
       amount: ingr.measures.us.amount,
       unit: ingr.measures.us.unitLong,
-      img: ingr.image,
+      image: ingr.image,
     }
     rec.ingredients.push(ingrObj);
   })

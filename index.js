@@ -66,6 +66,7 @@ const findRecipeByIngredientsHandler = {
       const selectedRecipe = {
         id: recipes[0].id,
         ingredients: recipes[0].ingredients,
+        image: recipes[0].image,
         readyInMinutes: recipes[0].readyInMinutes,
         servings: recipes[0].servings,
         steps: recipes[0].steps,
@@ -78,6 +79,7 @@ const findRecipeByIngredientsHandler = {
       const backupRecipe = {
         id: recipes[1].id,
         ingredients: recipes[1].ingredients,
+        image: recipes[1].image,
         readyInMinutes: recipes[1].readyInMinutes,
         servings: recipes[1].servings,
         steps: recipes[1].steps,
@@ -126,6 +128,7 @@ const selectedRecipeHandler = {
       const selectedRecipe = {
         id: recipe.id,
         ingredients: recipe.ingredients,
+        image: recipe.image,
         readyInMinutes: recipe.readyInMinutes,
         servings: recipe.servings,
         steps: recipe.steps,
