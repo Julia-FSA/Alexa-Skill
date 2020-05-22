@@ -113,29 +113,27 @@ const nextRecipeHandler = {
       Alexa.getIntentName(handlerInput.requestEnvelope) === "nextRecipe"
     );
   },
-  handle(handlerInput) {
+  handle (handlerInput) {
     try {
-    let speakOutput = "";
+    let speakOutput = ``;
     const session = handlerInput.requestEnvelope.session;
     const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
-    console.log('sessionAttributes.backupRecipe', sessionAttributes.backupRecipe)
-    if (sessionAttributes.backupRecipe === undefined){
+
+    if (session.attributes.backupRecipe === undefined){
       speakOutput = 'Sorry we dont have a backup recipe for you at this time'
-    } else {
-      console.log('were in the get second recipe else statement')
-
-      sessionAttributes.selectedRecipe = sessionAttributes.backupRecipe;
-      console.log("session.attributes", session.attributes)
-      console.log('sessionAttributes.selectedRecipe', sessionAttributes.selectedRecipe)
-      let recipeTitle = sessionAttributes.selectedRecipe.title;
-      let ingredients = []
-      sessionAttributes.selectedRecipe.ingredients.forEach((ingr) => {
-        ingredients.push(`${ingr.amount} ${ingr.unit} ${ingr.name}`)
-        })
-
-      speakOutput = `Okay, lets go with ${recipeTitle} instead, you will need ${ingredients},   ask for the first step to begin`;
+      return handlerInput.responseBuilder
+      .speak(speakOutput)
+      .reprompt(generalReprompt)
+      .getResponse();
     }
-    handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
+    let recipe = session.attributes.backupRecipe
+        let recipeTitle = recipe.title;
+      //speakOutput = `Okay, lets go with ${recipeTitle} instead, you will need ${ingredients},   ask for the first step to begin`;
+      speakOutput = `Okay, lets go with ${recipeTitle} instead, ask for the first step to begin`;
+
+      sessionAttributes.selectedRecipe = session.attributes.backupRecipe;
+      handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
+
 
     return handlerInput.responseBuilder
       .speak(speakOutput)
