@@ -230,6 +230,7 @@ const deleteWebUser = async (webUserData, uuid) => {
 // Utility function for "connectAlexaToWeb" below
 // step 2. copyz the info to the row where the PK is Alexa Id
 const copyUserData = async (alexaId, userData, passcode) => {
+  console.log(alexaId,userData, passcode )
   const params = {
     TableName: 'users',
     Key: {
@@ -261,7 +262,9 @@ const copyUserData = async (alexaId, userData, passcode) => {
 
 const connectAlexaToWeb = async (alexaId, passcode) => {
   // step 1. find the web user
+ 
   passcode = +passcode
+
   try {
     let params = {
       TableName: 'users',
@@ -282,7 +285,9 @@ const connectAlexaToWeb = async (alexaId, passcode) => {
         )
       } else {
         let result = data.Items[0]
+        console.log('result in connect alexa to web',result)
         copyUserData(alexaId, result, passcode)
+
       }
     })
   } catch (err) {

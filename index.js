@@ -13,9 +13,9 @@ const {
   removeIngredientFromFridge,
   getRecipe,
   connectAlexaToWeb,
-} = require("./dbHelper");
-const generalPrompt = "Is there anything else I can do?";
-const generalReprompt = "Ask for help at any point";
+} = require('./dbHelper');
+const generalPrompt = 'Is there anything else I can do?';
+const generalReprompt = 'Ask for help at any point';
 
 const LaunchRequestHandler = {
   canHandle(handlerInput) {
@@ -28,11 +28,10 @@ const LaunchRequestHandler = {
     let userId = session.user.userId.slice(18);
     findOrCreateUser(userId);
     const speakOutput = `Welcome to Julia Cooks. How can I help you today?`;
-    //     const speakOutput = `Welcome to Julia Cooks. I can manage your refridgerator and suggest recipes. How can I help you today?`
-
+    const openingReprompt = `You can add ingredients you have by saying add blank to fridge. ask what is in my fridge to hear your stock. ask what can i make and I'll find you a recipe. remove a single ingredient from your fridge by saying remove blank from fridge. Clear fridge will empty all your ingredients. say help to hear this again.`
     return handlerInput.responseBuilder
       .speak(speakOutput)
-      .reprompt(generalReprompt)
+      .reprompt(openingReprompt)
       .getResponse();
   },
 };
@@ -46,25 +45,23 @@ const findRecipeByIngredientsHandler = {
   },
   async handle(handlerInput) {
     const session = handlerInput.requestEnvelope.session;
+    const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
     let userId = session.user.userId.slice(18);
     let recipes = await getRecipe(userId);
-    let spoonacular = recipes[0];
     let speakOutput = "";
     let reprompt = "";
-    if (!spoonacular) {
+    if (recipes === undefined) {
       speakOutput = `We can't find a recipe based on what you have. Please either add more ingredients or remove the more random ingredients you have.`;
-    }
-
-      const recipeName = spoonacular.title;
+      reprompt = 'ask for help if you are confused, you can also clear your fridge and start again if you would like';
+    } else {
+      const recipeName = recipes[0].title;
       const ingredients = []
-      spoonacular.ingredients.forEach((ingr) => {
+      recipes[0].ingredients.forEach((ingr) => {
        ingredients.push(`${ingr.amount} ${ingr.unit} ${ingr.name}`)
       })
 
-      const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
-      // if (recipes.length > 0) {
-      //   reprompt = `we found a recipe for ${recipeName}. You will need the following ingredients, ${ingredients}`;
-      // }
+      //const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+
       const selectedRecipe = {
         id: recipes[0].id,
         ingredients: recipes[0].ingredients,
@@ -90,7 +87,7 @@ const findRecipeByIngredientsHandler = {
         stepIndex: 0,
       };
 
-      if(backupRecipe.id === undefined){
+      if (backupRecipe.id === undefined){
         reprompt = 'this is the only recipe we could find if you would like another one, please try again with some changes to the fridge'
       } else {
         reprompt =  `is this recipe okay? I also have ${recipes[1].title},  if you would prefer this one instead please say next recipe`
@@ -99,8 +96,9 @@ const findRecipeByIngredientsHandler = {
 
       sessionAttributes.selectedRecipe = selectedRecipe;
       sessionAttributes.backupRecipe = backupRecipe;
-      handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
 
+      }
+      handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
     return handlerInput.responseBuilder
       .speak(speakOutput)
       .reprompt(reprompt)
@@ -115,27 +113,33 @@ const nextRecipeHandler = {
       Alexa.getIntentName(handlerInput.requestEnvelope) === "nextRecipe"
     );
   },
-  handle(handlerInput) {
+  handle (handlerInput) {
     try {
-    let speakOutput = "";
+    let speakOutput = ``;
     const session = handlerInput.requestEnvelope.session;
     const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
-    sessionAttributes.selectedRecipe = sessionAttributes.backupRecipe;
-    let recipeTitle = sessionAttributes.selectedRecipe.title;
 
-    const ingredients = []
-    sessionAttributes.selectedRecipe.ingredients.forEach((ingr) => {
-     ingredients.push(`${ingr.amount} ${ingr.unit} ${ingr.name}`)
-    })
+    if (session.attributes.backupRecipe === undefined){
+      speakOutput = 'Sorry we dont have a backup recipe for you at this time'
+      return handlerInput.responseBuilder
+      .speak(speakOutput)
+      .reprompt(generalReprompt)
+      .getResponse();
+    }
+    let recipe = session.attributes.backupRecipe
+        let recipeTitle = recipe.title;
+      //speakOutput = `Okay, lets go with ${recipeTitle} instead, you will need ${ingredients},   ask for the first step to begin`;
+      speakOutput = `Okay, lets go with ${recipeTitle} instead, ask for the first step to begin`;
 
-    handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
-    speakOutput = `Okay, lets go with ${recipeTitle} instead, you will need ${ingredients},   ask for the first step to begin`;
+      sessionAttributes.selectedRecipe = session.attributes.backupRecipe;
+      handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
+
 
     return handlerInput.responseBuilder
       .speak(speakOutput)
       .reprompt(generalReprompt)
       .getResponse();
-  } catch(err){
+  } catch (err){
     console.error(err)
   }
   },
@@ -144,8 +148,8 @@ const nextRecipeHandler = {
 const nextStepHandler = {
   canHandle(handlerInput) {
     return (
-      Alexa.getRequestType(handlerInput.requestEnvelope) === "IntentRequest" &&
-      Alexa.getIntentName(handlerInput.requestEnvelope) === "nextStep"
+      Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' &&
+      Alexa.getIntentName(handlerInput.requestEnvelope) === 'nextStep'
     );
   },
   handle(handlerInput) {
@@ -160,7 +164,7 @@ const nextStepHandler = {
     }
 
     const statement = selectedRecipe.steps[selectedRecipe.stepIndex]
-      ? ""
+      ? ''
       : `,   Congratulations, you're all done!`;
     const speakOutput = `${
       selectedRecipe.steps[selectedRecipe.stepIndex - 1]
@@ -180,7 +184,7 @@ const nextStepHandler = {
       .getResponse();
   },
 };
-//************************************************!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! */
+
 
 const addToFridgeHandler = {
   canHandle(handlerInput) {
@@ -193,13 +197,14 @@ const addToFridgeHandler = {
     const session = handlerInput.requestEnvelope.session;
     let userId = session.user.userId.slice(18);
     const request = handlerInput.requestEnvelope.request;
-    let speakOutput = "";
+    let speakOutput = '';
     let slotValues = getSlotValues(request.intent.slots);
+    console.log('slotValues.food.heardAs', slotValues.food.heardAs)
     if (
-      slotValues.food.heardAs === "undefined" ||
+      slotValues.food.heardAs === 'undefined' ||
       slotValues.food.heardAs === undefined
     ) {
-      speakOutput = "sorry I did not understand that";
+      speakOutput = 'sorry I did not understand that';
     } else if (slotValues && slotValues.food) {
      let ingredient =  await getFromSpoon('ingredientByName', null, null,  slotValues.food.heardAs)
       let ingrObj = {
@@ -208,9 +213,9 @@ const addToFridgeHandler = {
         id: ingredient.id
       }
       speakOutput = `Added ${ingrObj.name} to the fridge`;
-      addIngredientToFridge(userId, ingrObj, "piece");
+      addIngredientToFridge(userId, ingrObj, 'piece');
     } else {
-      speakOutput = "Sorry, i did not hear you.";
+      speakOutput = 'Sorry, i did not hear you.';
     }
     return handlerInput.responseBuilder
       .speak(speakOutput)
@@ -222,21 +227,21 @@ const addToFridgeHandler = {
 const removeFromFridgeHandler = {
   canHandle(handlerInput) {
     return (
-      Alexa.getRequestType(handlerInput.requestEnvelope) === "IntentRequest" &&
-      Alexa.getIntentName(handlerInput.requestEnvelope) === "removeFromFridge"
+      Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' &&
+      Alexa.getIntentName(handlerInput.requestEnvelope) === 'removeFromFridge'
     );
   },
   handle(handlerInput) {
     const session = handlerInput.requestEnvelope.session;
     let userId = session.user.userId.slice(18);
     const request = handlerInput.requestEnvelope.request;
-    let speakOutput = "";
+    let speakOutput = '';
     let slotValues = getSlotValues(request.intent.slots);
     if (slotValues && slotValues.food) {
       speakOutput = `Removed ${slotValues.food.heardAs} from the fridge`;
       removeIngredientFromFridge(slotValues.food.heardAs, userId);
     } else {
-      speakOutput = "Sorry, i did not hear you.";
+      speakOutput = 'Sorry, i did not hear you.';
     }
     return handlerInput.responseBuilder
       .speak(speakOutput)
@@ -248,8 +253,8 @@ const removeFromFridgeHandler = {
 const clearFridgeHandler = {
   canHandle(handlerInput) {
     return (
-      Alexa.getRequestType(handlerInput.requestEnvelope) === "IntentRequest" &&
-      Alexa.getIntentName(handlerInput.requestEnvelope) === "clearFridge"
+      Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' &&
+      Alexa.getIntentName(handlerInput.requestEnvelope) === 'clearFridge'
     );
   },
   handle(handlerInput) {
@@ -279,13 +284,12 @@ const getFridgeHandler = {
     const session = handlerInput.requestEnvelope.session;
     let userId = session.user.userId.slice(18);
     const fridge = await getFridgeById(userId);
-    console.log(fridge)
     let speakOutput = "";
     let fridgeIng = Object.keys(fridge).join(", ");
     if (fridgeIng.length > 0) {
       speakOutput = `There is ${fridgeIng} in your fridge`;
     } else {
-      speakOutput = "Your fridge is empty";
+      speakOutput = 'Your fridge is empty';
     }
     return handlerInput.responseBuilder
       .speak(speakOutput)
@@ -309,7 +313,8 @@ const AlexaWebConnectionHandler = {
     let alexaId = session.user.userId.slice(18);
     const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
     sessionAttributes.alexaId = alexaId;
-
+    //john this next line may not be needed but from what i understand each time you change session you must set it
+    handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
     const speakOutput = "Please say your passcode one digit at a time.";
     return handlerInput.responseBuilder
       .speak(speakOutput)
@@ -334,7 +339,8 @@ const AnswerIntentAlexaIdHandler = {
     const sessionAttributes = handlerInput.attributesManager.getSessionAttributes()
     sessionAttributes.passcode = passcode
     const speechText = `Your  passcode is: ${passcode}, please log out of the Julia Cooks website now. When logged out, please say confirm code.`
-    
+    //john this next line im not sure if it helps but from what i understand each time you change session you must set it
+    handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
 
     return handlerInput.responseBuilder
       .speak(speechText)
@@ -377,7 +383,7 @@ const HelpHandler = {
   },
   handle(handlerInput) {
     const speakOutput =
-      "You can say add blank to fridge to add ingredients to your stock. You can also ask what can I make, to find recipes. clear fridge to empty it of all ingredients.";
+      'You can say add blank to fridge to add ingredients to your stock. You can also ask what can I make, to find recipes. clear fridge to empty it of all ingredients.';
     return handlerInput.responseBuilder
       .speak(speakOutput)
       .reprompt(generalReprompt)
@@ -483,7 +489,7 @@ const ErrorHandler = {
     const speakOutput = `Sorry, I had trouble doing what you asked. Please try again.`;
     return handlerInput.responseBuilder
       .speak(speakOutput)
-      .reprompt(speakOutput)
+      .reprompt('I am having difficulties at this time')
       .getResponse();
   },
 };
