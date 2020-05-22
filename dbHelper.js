@@ -120,7 +120,6 @@ const getRecipeByTitle = async (recipeTitle) => {
 
 const addIngredientToFridge = async (userId, ingredient, unit) => {
   try {
-    console.log("**!*!**!*!*!*!*!!**!**!*!*!*!",ingredient)
     let result = await docClient
       .get({
         TableName: 'stocks',
@@ -179,6 +178,24 @@ const removeIngredientFromFridge = async (ingredient, userId) => {
     console.log(err)
   }
 }
+
+const getSelectedRecipe = async (userId) => {
+  try {
+    let params = {
+      TableName: 'users',
+      Key: {
+        id: userId,
+      },
+    }
+    const data = await docClient.get(params).promise()
+    console.log(data)
+    return data.Item.selectedRecipe;
+
+  } catch (err) {
+    console.error(err)
+  }
+}
+
 
 const getRecipe = async (userId) => {
   try {
@@ -262,7 +279,7 @@ const copyUserData = async (alexaId, userData, passcode) => {
 
 const connectAlexaToWeb = async (alexaId, passcode) => {
   // step 1. find the web user
- 
+
   passcode = +passcode
 
   try {
@@ -317,6 +334,7 @@ const clearFridge = async (userId) => {
 module.exports = {
   clearFridge,
   addIngredientToFridge,
+  getSelectedRecipe,
   putRecipeInDB,
   getFridgeById,
   getRecipeById,
