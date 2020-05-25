@@ -280,7 +280,7 @@ const addToFridgeHandler = {
      let ingredient =  await getFromSpoon('ingredientByName', null, null,  slotValues.food.heardAs)
       let ingrObj = {
         name: ingredient.name,
-        img: `https://spoonacular.com/cdn/ingredients_250x250/${ingredient.image}`,
+        image: `https://spoonacular.com/cdn/ingredients_250x250/${ingredient.image}`,
         id: ingredient.id
       }
       speakOutput = `Added ${ingrObj.name} to the fridge`;

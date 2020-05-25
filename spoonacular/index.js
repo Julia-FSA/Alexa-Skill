@@ -49,8 +49,9 @@ const getFromSpoon = async (caseType, id, ingredients, name) => {
       let ingredient = await axios.get(
         `https://api.spoonacular.com/food/ingredients/autocomplete?query=${name}&metaInformation=true&number=1&apiKey=${SpoonacularAPIKey}`
       );
-
+        console.log('get from spoon', ingredient.data[0])
       return ingredient.data[0];
+
     } catch (err) {
       console.error(err);
     }
