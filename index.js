@@ -61,7 +61,6 @@ const findRecipeByIngredientsHandler = {
        ingredients.push(`${ingr.amount} ${ingr.unit} ${ingr.name}`)
       })
 
-      //const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
 
       const selectedRecipe = {
         id: recipes[0].id,
@@ -139,22 +138,12 @@ const selectedRecipeHandler = {
         stepIndex: 0,
       };
 
-    // if (selectedRecipe.id === undefined){
-    //   speakOutput = 'Sorry we dont have a recipe saved for you at this time'
-    //   return handlerInput.responseBuilder
-    //   .speak(speakOutput)
-    //   .reprompt(generalReprompt)
-    //   .getResponse();
-    // }
-
         let recipeTitle = selectedRecipe.title;
         let ingredients = []
         for (let i = 0; i < selectedRecipe.ingredients.length; i++) {
           let ingr = selectedRecipe.ingredients[i]
          await ingredients.push(` ${ingr.amount} ${ingr.unit} ${ingr.name} ,`)
         }
-      speakOutput = `Okay, lets go with ${recipeTitle} instead, you will need ${ingredients},   ask for the first step to begin`;
-      //speakOutput = `Okay, lets go with ${recipeTitle}, ask for the first step to begin`;
 
       sessionAttributes.selectedRecipe = selectedRecipe;
       handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
@@ -200,7 +189,6 @@ const nextRecipeHandler = {
       }
         let recipeTitle = recipe.title;
       speakOutput = `Okay, lets go with ${recipeTitle} instead, you will need ${ingredients},   ask for the first step to begin`;
-      //speakOutput = `Okay, lets go with ${recipeTitle} instead, ask for the first step to begin`;
 
       sessionAttributes.selectedRecipe = session.attributes.backupRecipe;
       handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
@@ -369,7 +357,6 @@ const getFridgeHandler = {
   },
 };
 
-/***************************************************************************/
 
 const AlexaWebConnectionHandler = {
   canHandle(handlerInput) {
@@ -384,7 +371,6 @@ const AlexaWebConnectionHandler = {
     let alexaId = session.user.userId.slice(18);
     const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
     sessionAttributes.alexaId = alexaId;
-    //john this next line may not be needed but from what i understand each time you change session you must set it
     handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
     const speakOutput = "Please say your passcode one digit at a time.";
     return handlerInput.responseBuilder
@@ -410,7 +396,6 @@ const AnswerIntentAlexaIdHandler = {
     const sessionAttributes = handlerInput.attributesManager.getSessionAttributes()
     sessionAttributes.passcode = passcode
     const speechText = `Your  passcode is: ${passcode}, please log out of the Julia Cooks website now. When logged out, please say confirm code.`
-    //john this next line im not sure if it helps but from what i understand each time you change session you must set it
     handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
 
     return handlerInput.responseBuilder
